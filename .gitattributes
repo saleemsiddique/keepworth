@@ -1,2 +1,9 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# El proyecto se compila en macOS y los hooks son scripts de shell: con CRLF
+# fallan al ejecutarse. Se fuerza LF en todo el repositorio, se edite desde
+# donde se edite.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.xcassets/** -text
