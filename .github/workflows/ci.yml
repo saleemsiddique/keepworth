@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Ajustar la versión de Xcode al SDK de iOS 26. Si el runner cambia de imagen,
+      # `ls /Applications | grep Xcode` en un paso temporal dice qué hay disponible.
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+
+      - name: Install Tuist
+        uses: jdx/mise-action@v2
+
+      - name: Resolve dependencies
+        run: tuist install
+
+      # Genera el proyecto. Un cambio que rompa la ley de dependencias entre módulos
+      # falla aquí, antes de compilar una sola línea.
+      - name: Generate project
+        run: tuist generate --no-open
+
+      - name: Test
+        run: |
+          xcodebuild test \
+            -workspace Keepworth.xcworkspace \
+            -scheme Keepworth \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            | xcbeautify
+        env:
+          NSUnbufferedIO: YES
+
+  lint:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+
+      - name: Check formatting
+        run: |
+          xcrun swift-format lint \
+            --configuration .swift-format \
+            --recursive --strict \
+            Modules Apps
