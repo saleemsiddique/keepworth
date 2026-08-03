@@ -22,9 +22,10 @@ Dos destinos en la barra inferior con el botón de añadir en el centro exacto, 
 │ Resumen  ⊕  Movimientos │
 ```
 
-- **Resumen** — patrimonio neto, cuentas, movimientos recientes.
+- **Resumen** — patrimonio neto, cuentas agrupadas por banco, lo gastado y ahorrado del mes, movimientos recientes.
 - **⊕** — abre el editor de movimiento como sheet con detents. Único elemento con color de acento en la barra.
 - **Movimientos** — lista completa, buscable y filtrable.
 - **⚙ Ajustes** — en la toolbar, no en la barra inferior.
+- **Informe** — pantalla de detalle empujada desde Resumen. Abre en el mes en curso, con flechas entre meses y un selector de rango libre.
 
-**Regla de crecimiento**: presupuestos y metas serán secciones del scroll de Resumen; los informes son filtros aplicados en Movimientos; las recurrentes son un filtro "programadas". **Nunca se añade una tercera tab.** Si una funcionalidad nueva no encuentra sitio bajo esta regla, se discute con el usuario antes de tocar la navegación.
+**Regla de crecimiento**: presupuestos y metas serán secciones del scroll de Resumen; el informe es una pantalla de detalle empujada desde Resumen; buscar y filtrar vive en Movimientos, y las programadas son un filtro suyo. **Nunca se añade una tercera tab.** Si una funcionalidad nueva no encuentra sitio bajo esta regla, se discute con el usuario antes de tocar la navegación.

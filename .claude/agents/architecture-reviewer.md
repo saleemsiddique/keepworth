@@ -35,9 +35,17 @@ Excepción documentada y única: `Apps/KeepworthWidgets` sí depende de `Keepwor
 
 **2. Dinero.** Cualquier `Double` o `Float` que represente un importe es un bug, incluso "solo para mostrar" o "solo en un test". Busca `Double`, `Float` y `NSDecimalNumber` cerca de nombres como `amount`, `balance`, `total`, `price`, `money`.
 
-**3. Partida doble.** Todo `Entry` se construye con al menos dos `EntryLine` que suman cero en divisa base. Señala cualquier código que cree un asiento de una sola línea o que escriba líneas sin verificar el balance.
+**3. Partida doble.** Todo `Entry` se construye con al menos dos `EntryLine` cuya suma de `baseAmountMinor` es exactamente cero. Señala cualquier código que cree un asiento de una sola línea o que escriba líneas sin verificar el balance.
+
+Señala también cualquier sitio donde el valor en divisa base se **calcule** multiplicando por un tipo de cambio en lugar de leerse de `baseAmountMinor`: eso deja restos de redondeo y descuadra los asientos.
+
+**3 bis. Tipos de cuenta.** El patrimonio neto solo suma cuentas `.asset` y `.liability`. Una consulta o un cálculo de patrimonio que incluya `.expense`, `.income` o `.equity` es el hallazgo más grave posible: le dice al usuario que tiene dinero que no tiene.
+
+Igualmente, una cuenta `.expense`, `.income` o `.equity` nunca puede tener `institutionId`. Un banco agrupa cuentas donde hay dinero; una categoría no lo es.
 
 **4. Soft delete.** Ningún `DELETE FROM` ni `deleteAll()` en código de producción. Borrar es escribir `deleted_at`. Toda consulta de lectura filtra `deleted_at IS NULL`. Una migración ya existente que aparezca modificada en el diff es un hallazgo grave: las migraciones publicadas son inmutables.
+
+Caso concreto y silencioso: una consulta que lea de `entry_line` en lugar de la vista `live_entry_line`. Filtrar solo por la línea deja vivas las líneas de asientos borrados, y los saldos descuadran sin dar ningún síntoma.
 
 **5. Identificadores.** Ninguna tabla con `AUTOINCREMENT` ni clave primaria entera. Rompe el sync con CloudKit de forma irreparable.
 

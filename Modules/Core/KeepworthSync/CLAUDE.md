@@ -18,6 +18,10 @@ Estas tres decisiones se tomaron en la Fase 0 precisamente para que este módulo
 - **`updated_at` en toda fila**: es el criterio de resolución de conflictos.
 - **Soft delete**: sin tombstone, un registro borrado en un dispositivo reaparece desde otro.
 
+Se sincronizan `institution`, `account`, `entry`, `entry_line` y `app_setting`.
+
+Los *system fields* de cada `CKRecord` se conservan en una tabla `sync_metadata` aparte, no en columnas de las tablas de datos: perderlos hace que el servidor rechace la escritura o duplique el registro, y mezclarlos con el modelo cargaría al dominio con detalles de transporte.
+
 ## Reglas
 
 1. La resolución de conflictos es **a nivel de registro por `updated_at`**, no a nivel de campo.
