@@ -83,15 +83,23 @@ Solo GRDB está aprobada. Cualquier otra librería se propone al usuario con alt
 ## Comandos
 
 ```bash
-tuist install     # resuelve dependencias externas
-tuist generate    # regenera el .xcodeproj (no está en git)
-tuist build
+tuist install            # resuelve dependencias externas
+tuist generate --no-open # regenera el .xcodeproj (no está en git)
+
+tuist xcodebuild build \
+  -workspace Keepworth.xcworkspace \
+  -scheme Keepworth-Workspace \
+  -destination 'platform=iOS Simulator,name=iPhone 17'
 
 xcodebuild test \
   -workspace Keepworth.xcworkspace \
-  -scheme Keepworth \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+  -scheme Keepworth-Workspace \
+  -destination 'platform=iOS Simulator,name=iPhone 17' | xcbeautify
+
+xcrun swift-format lint --configuration .swift-format --recursive --strict Modules Apps
 ```
+
+**El esquema es `Keepworth-Workspace`, no `Keepworth`.** Tuist autogenera un esquema por target: el de `Keepworth` es el de la app y su acción de test está vacía, así que ejecuta cero tests sin avisar de ello. `Keepworth-Workspace` es el único que agrupa los cinco targets de test.
 
 El `.xcodeproj` y el `.xcworkspace` son artefactos generados: no se editan a mano ni se versionan. Para añadir un módulo o cambiar dependencias se edita `Project.swift`.
 

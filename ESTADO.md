@@ -4,7 +4,7 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-03 — sesión de modelo de datos: bancos como tabla propia, valor en divisa base guardado en vez de calculado, reglas de borrado y semilla del primer arranque.
+Última actualización: 2026-08-04 — **Fase 0 verificada en el Mac**: proyecto generado, build y tests en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados.
 
 ---
 
@@ -27,7 +27,7 @@ https://claude.ai/code/artifact/fc6c746d-92e4-408e-bc33-32786328d709
 
 ### Lo que existe
 
-La **Fase 0 está escrita pero no verificada**. Se redactó desde una máquina Windows, donde no hay Xcode ni Tuist, así que ni una línea ha sido compilada, formateada ni ejecutada.
+La **Fase 0 está verificada** (2026-08-04). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila, los cinco tests placeholder pasan y el lint de formato sale limpio. Lo que falló y se corrigió está en la sección 3.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -74,39 +74,55 @@ mise install                 # instala tuist y xcbeautify según mise.toml
 
 # 2. Proyecto
 tuist install                # resuelve GRDB
-tuist generate               # genera Keepworth.xcworkspace
-tuist build
+tuist generate --no-open     # genera Keepworth.xcworkspace
+
+tuist xcodebuild build \
+  -workspace Keepworth.xcworkspace \
+  -scheme Keepworth-Workspace \
+  -destination 'platform=iOS Simulator,name=iPhone 17'
 
 # 3. Tests
 xcodebuild test \
   -workspace Keepworth.xcworkspace \
-  -scheme Keepworth \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+  -scheme Keepworth-Workspace \
+  -destination 'platform=iOS Simulator,name=iPhone 17' | xcbeautify
+```
+
+`mise` necesita estar en el `PATH` del shell **no interactivo**, porque es el que ejecutan los hooks. Se resuelve con los shims, no con `mise activate`:
+
+```bash
+echo 'export PATH="$HOME/.local/share/mise/shims:$PATH"' >> ~/.zshrc
 ```
 
 El `.xcodeproj` y el `.xcworkspace` son artefactos generados: no se editan a mano ni se versionan. Para añadir un módulo o cambiar dependencias se edita `Project.swift`.
 
-### Puntos a corregir o confirmar en el primer arranque
+### Qué se encontró al verificar (2026-08-04)
 
-Ordenados por probabilidad de dar problemas:
+Resuelto todo salvo lo que se indica:
 
-1. **`bundleIdPrefix` en `Project.swift`** está como `com.keepworth`, un placeholder. Al fijarlo hay que cambiarlo también en `Apps/Keepworth/Keepworth.entitlements`, donde aparecen el App Group `group.com.keepworth` y el contenedor `iCloud.com.keepworth`. Ambos hay que registrarlos en el portal de Apple Developer (la cuenta de pago está activa).
+1. **Bundle ID fijado**: `com.saleemsiddique.keepworth`, con `group.com.saleemsiddique.keepworth` y `iCloud.com.saleemsiddique.keepworth`. **Pendiente y a cargo del usuario**: registrar los tres identificadores en el portal de Apple Developer. No bloquea el simulador; sí hace falta para dispositivo físico y para activar CloudKit en la Fase 9.
 
-2. **Versión de GRDB**: `Tuist/Package.swift` pide `from: "7.0.0"`. Comprobar cuál es la versión actual y si la API asumida en las fases siguientes coincide.
+2. **El comando de test documentado no ejecutaba ni un test.** Tuist autogenera un esquema por target, y el del target `Keepworth` es el de la app: su `<Testables>` está vacío porque los cinco targets de test dependen de los frameworks, no de la app. El esquema correcto es **`Keepworth-Workspace`**. Estaba mal en `CLAUDE.md`, en este archivo y en el CI.
 
-3. **Xcode en el CI**: `.github/workflows/ci.yml` hace `xcode-select -s /Applications/Xcode_26.app`. El nombre exacto depende de la imagen del runner de GitHub. Si falla, `ls /Applications | grep Xcode` en un paso temporal dice qué hay disponible.
+3. **`RootViewTests.swift` no compilaba.** En modo de lenguaje Swift 6, conformar a `View` aísla el inicializador al actor principal, así que el test necesita `@MainActor`. Aplica a cualquier test que construya una vista de aquí en adelante.
 
-4. **`SWIFT_TREAT_WARNINGS_AS_ERRORS: YES`** combinado con `SWIFT_STRICT_CONCURRENCY: complete` es deliberadamente severo. Si el primer build se ahoga en warnings de concurrencia procedentes de GRDB, hay dos salidas —arreglarlos o relajar el ajuste— y **la decisión es del usuario**, no se toma sola.
+4. **`tuist build` está deprecado** en favor de `tuist xcodebuild build`. Documentado ya con la forma nueva.
 
-5. **Simulador**: `iPhone 17` puede no existir en la instalación local. Ajustar el `-destination`.
+5. **CI reescrito**: `runs-on: macos-26` (el proyecto apunta a iOS 26 y necesita ese SDK) y selección de Xcode con `maxim-lobanov/setup-xcode` en vez de `xcode-select -s /Applications/Xcode_26.app`, cuya ruta depende de la imagen del runner.
 
-6. **`.gitignore`**: se añadió `*.xcodeproj` y `*.xcworkspace`. Es lo correcto con Tuist, pero conviene confirmarlo antes del primer commit: revertirlo después de haber versionado un proyecto generado es molesto.
+6. **`SWIFT_STRICT_CONCURRENCY: complete` eliminado de `Project.swift`**: el modo de lenguaje Swift 6 ya lo implica. **No es una relajación del ajuste**, es quitar una redundancia; `SWIFT_TREAT_WARNINGS_AS_ERRORS: YES` sigue puesto y el build sale limpio sin un solo warning.
 
-### Verificar que el entorno de IA funciona
+7. **GRDB resuelve a 7.11.1** con el `from: "7.0.0"` existente. `Tuist/Package.resolved` se versiona para que el CI resuelva exactamente la misma versión que el Mac.
 
-- Editar cualquier `.swift` y comprobar que queda formateado sin intervención. Si no, `xcrun --find swift-format` dirá si la herramienta está disponible (requiere Xcode 16+).
-- Tocar `Project.swift` y comprobar que el proyecto se regenera solo.
-- Lanzar el agente `architecture-reviewer` sobre un `import GRDB` introducido a propósito en una feature y comprobar que lo detecta.
+8. **Simulador**: `iPhone 17` existe en la instalación local (runtimes iOS 26.4 y 26.5). El `-destination` documentado es correcto.
+
+9. **`.gitignore`**: confirmado antes del primer commit. `*.xcodeproj` y `*.xcworkspace` fuera de git es lo correcto con Tuist.
+
+### Entorno de IA: verificado
+
+- **Hook de formato**: se escribió un `.swift` con indentación de 6 y 8 espacios y quedó a 4 sin intervención.
+- **Hook de regeneración**: el script es correcto y ejecuta `tuist install` + `tuist generate` al tocar `Project.swift`. Depende de que `tuist` esté en el `PATH` del shell no interactivo; sin los shims el hook avisa y sale sin hacer nada. El `mtime` del `.xcodeproj` **no** sirve como comprobación: la generación de Tuist es idempotente y no reescribe si el contenido no cambia.
+- **Agente `architecture-reviewer`**: detectó un `import GRDB` en un archivo bajo `Modules/Features/`, y además el `DatabaseQueue` filtrado en la API pública. Hallazgo suyo que conviene retener: **un archivo bajo `Modules/Features/` sin target declarado en `Project.swift` esquiva la validación entera** — ni `tuist generate` ni el build lo ven. En la Fase 4, el target y sus `dependencies` se declaran en el mismo commit que el primer `.swift` de la feature.
 
 ---
 
@@ -496,13 +512,13 @@ Existe para no reorganizar la navegación en v2:
 
 Cada fase termina compilando, con sus tests en verde y en CI. No se empieza una fase con la anterior a medias.
 
-### Fase 0 — Bootstrap del proyecto y del entorno de IA — *escrita, sin verificar*
+### Fase 0 — Bootstrap del proyecto y del entorno de IA — **verificada (2026-08-04)**
 
 *Proyecto*: Tuist, `Project.swift` con targets y ley de dependencias, bundle ID, App Group, entitlements de CloudKit, workflow de CI, un test trivial por módulo.
 
 *Entorno de IA*: `CLAUDE.md` raíz y por módulo Core, hook de formato Swift, hook de regeneración de Tuist, agente `architecture-reviewer`.
 
-**Queda pendiente**: ejecutar todo en el Mac y corregir lo que falle (ver sección 3).
+Proyecto generado, build en verde, los cinco tests placeholder pasando, lint limpio y los tres criterios del entorno de IA comprobados. Lo que falló durante la verificación y cómo se corrigió está en la sección 3.
 
 ### Fase 1 — Dominio
 
@@ -565,13 +581,19 @@ Reglas: el sync es **offline-first** (los cambios se aplican en local primero, l
 
 ```bash
 tuist install
-tuist generate
-tuist build
+tuist generate --no-open
+
+tuist xcodebuild build \
+  -workspace Keepworth.xcworkspace \
+  -scheme Keepworth-Workspace \
+  -destination 'platform=iOS Simulator,name=iPhone 17'
 
 xcodebuild test \
   -workspace Keepworth.xcworkspace \
-  -scheme Keepworth \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+  -scheme Keepworth-Workspace \
+  -destination 'platform=iOS Simulator,name=iPhone 17' | xcbeautify
+
+xcrun swift-format lint --configuration .swift-format --recursive --strict Modules Apps
 ```
 
 Criterios de aceptación por fase:
@@ -590,7 +612,8 @@ Criterios de aceptación por fase:
 
 No bloquean nada, pero hay que resolverlos cuando toque:
 
-- **Bundle ID y contenedor de CloudKit**: se fijan al arrancar en el Mac (ver sección 3).
+- **Registro de identificadores en Apple Developer**: el bundle ID ya está fijado (`com.saleemsiddique.keepworth`), pero el App Group y el contenedor de CloudKit hay que darlos de alta en el portal. Necesario para dispositivo físico y para la Fase 9; el simulador no lo pide.
+- **Team ID**: no hay `DEVELOPMENT_TEAM` en `Project.swift`. En simulador la firma ad-hoc basta; al instalar en un iPhone habrá que añadirlo.
 - **Divisa base del usuario**: se elige en el primer arranque y se guarda en `app_setting`. La UI multi-divisa llega después de la v1.
 - **Fuente de tipos de cambio**: hasta que exista el backend, introducción manual.
 - **Backend futuro**: solo datos no personales. Cuando llegue el momento, es una conversación nueva.
