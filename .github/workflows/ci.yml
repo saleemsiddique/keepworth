@@ -11,14 +11,18 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: macos-latest
+    # macOS 26 es el requisito real: el proyecto apunta a iOS 26 y necesita ese SDK.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
-      # Ajustar la versión de Xcode al SDK de iOS 26. Si el runner cambia de imagen,
-      # `ls /Applications | grep Xcode` en un paso temporal dice qué hay disponible.
+      # Seleccionar Xcode por versión en vez de por ruta: el nombre exacto de la app
+      # cambia entre imágenes de runner y `xcode-select -s /Applications/Xcode_26.app`
+      # se rompe en cuanto GitHub actualiza la imagen.
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.app
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26"
 
       - name: Install Tuist
         uses: jdx/mise-action@v2
@@ -31,23 +35,29 @@ jobs:
       - name: Generate project
         run: tuist generate --no-open
 
+      # `Keepworth-Workspace` es el esquema autogenerado que agrupa los cinco targets
+      # de test. El esquema `Keepworth` es solo el de la app y su acción de test está
+      # vacía: usarlo ejecutaría cero tests sin decirlo.
       - name: Test
         run: |
+          set -o pipefail
           xcodebuild test \
             -workspace Keepworth.xcworkspace \
-            -scheme Keepworth \
+            -scheme Keepworth-Workspace \
             -destination 'platform=iOS Simulator,name=iPhone 17' \
             | xcbeautify
         env:
           NSUnbufferedIO: YES
 
   lint:
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.app
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26"
 
       - name: Check formatting
         run: |
