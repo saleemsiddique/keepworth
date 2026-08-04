@@ -1,3 +1,15 @@
+# Tuist
+#
+# El proyecto y el workspace son artefactos generados a partir de Project.swift.
+# Nunca se editan a mano ni se versionan: se regeneran con `tuist generate`.
+*.xcodeproj
+*.xcworkspace
+.tuist-version
+Tuist/.build/
+Tuist/Dependencies/
+Derived/
+graph.png
+
 # Xcode
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
