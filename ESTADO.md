@@ -4,7 +4,7 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-04 — **Fase 0 verificada en el Mac**: proyecto generado, build y tests en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados.
+Última actualización: 2026-08-04 — **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
 ---
 
@@ -27,13 +27,16 @@ https://claude.ai/code/artifact/fc6c746d-92e4-408e-bc33-32786328d709
 
 ### Lo que existe
 
-La **Fase 0 está verificada** (2026-08-04). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila, los cinco tests placeholder pasan y el lint de formato sale limpio. Lo que falló y se corrigió está en la sección 3.
+La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila sin un solo warning, los cinco tests placeholder pasan, el lint de formato sale limpio y **el CI está en verde**. Lo que falló y se corrigió está en la sección 3.
+
+**La siguiente fase por empezar es la 1 (Dominio).** Nada de ella está escrito.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
 ESTADO.md                                    este archivo
 Project.swift                                manifiesto de Tuist
 Tuist/Package.swift                          dependencias externas (solo GRDB)
+Tuist/Package.resolved                       lockfile: fija GRDB 7.11.1 en Mac y CI
 mise.toml                                    versiones de tuist y xcbeautify
 .swift-format                                configuración de formato
 .gitignore                                   con sección Tuist añadida
@@ -65,7 +68,19 @@ Los archivos `*Module.swift` de cada módulo Core son **andamiaje deliberado**: 
 
 ---
 
-## 3. Arranque en el Mac
+## 3. Entorno de desarrollo
+
+El proyecto se desarrolla en **dos máquinas**, y no son intercambiables:
+
+| | Mac | Windows |
+|---|---|---|
+| Editar Swift, Markdown, `Project.swift` | Sí | Sí |
+| Compilar, ejecutar tests, simulador | Sí | **No** — no hay Xcode |
+| `tuist install / generate` | Sí | **No** — Tuist es solo macOS |
+| `swift-format` (y por tanto el hook de formato) | Sí | **No** — viene con Xcode |
+| Verificar que algo funciona | En local | **Solo empujando y mirando el CI** |
+
+### Arranque en el Mac
 
 ```bash
 # 1. Herramientas
@@ -96,6 +111,21 @@ echo 'export PATH="$HOME/.local/share/mise/shims:$PATH"' >> ~/.zshrc
 
 El `.xcodeproj` y el `.xcworkspace` son artefactos generados: no se editan a mano ni se versionan. Para añadir un módulo o cambiar dependencias se edita `Project.swift`.
 
+### Trabajar desde Windows
+
+Se puede escribir código, pero **no se puede verificar nada en local**. Consecuencias concretas:
+
+- **Los dos hooks quedan inertes.** `format-swift.sh` avisa de que no encuentra `swift-format` y sale sin tocar el archivo; `regenerate-tuist.sh` avisa de que no encuentra `tuist`. Ambos están escritos para salir sin error en ese caso, así que no bloquean la edición. Son scripts de shell invocados con `bash`: si el Windows no tiene `bash` disponible, el hook simplemente no llega a ejecutarse, que a efectos prácticos es lo mismo.
+- **El código se sube sin formatear**, y el job `lint` del CI corre `swift-format lint --strict`, que trata cualquier aviso como error. Es el fallo de CI más probable trabajando desde Windows, y no se puede prevenir en local. Se arregla en el Mac con `xcrun swift-format format --in-place`.
+- **El CI es la única verificación disponible.** Dispara en `pull_request` y en `push` a `main`: empujar una rama sin abrir PR **no ejecuta nada**.
+- **La configuración de git es por clon**, no viaja en el repositorio. El clon del Mac tiene `user.email` puesto al noreply de GitHub porque la cuenta bloquea los push que exponen el email real. En el clon de Windows hay que repetirlo o el push se rechaza:
+
+  ```
+  git config user.email "118107895+saleemsiddique@users.noreply.github.com"
+  ```
+
+Lo razonable desde Windows es limitarse a documentación, diseño y decisiones, y dejar el Swift para el Mac. Si aun así se escribe código, se asume que la primera pasada de CI puede venir roja por formato.
+
 ### Qué se encontró al verificar (2026-08-04)
 
 Resuelto todo salvo lo que se indica:
@@ -108,7 +138,7 @@ Resuelto todo salvo lo que se indica:
 
 4. **`tuist build` está deprecado** en favor de `tuist xcodebuild build`. Documentado ya con la forma nueva.
 
-5. **CI reescrito**: `runs-on: macos-26` (el proyecto apunta a iOS 26 y necesita ese SDK) y selección de Xcode con `maxim-lobanov/setup-xcode` en vez de `xcode-select -s /Applications/Xcode_26.app`, cuya ruta depende de la imagen del runner.
+5. **CI reescrito y en verde**: `runs-on: macos-26` (el proyecto apunta a iOS 26 y necesita ese SDK), selección de Xcode con `maxim-lobanov/setup-xcode` en vez de `xcode-select -s /Applications/Xcode_26.app` —cuya ruta depende de la imagen del runner— y `actions/checkout@v5`, porque la v4 usa un Node ya deprecado. Los dos jobs pasan.
 
 6. **`SWIFT_STRICT_CONCURRENCY: complete` eliminado de `Project.swift`**: el modo de lenguaje Swift 6 ya lo implica. **No es una relajación del ajuste**, es quitar una redundancia; `SWIFT_TREAT_WARNINGS_AS_ERRORS: YES` sigue puesto y el build sale limpio sin un solo warning.
 
@@ -117,6 +147,12 @@ Resuelto todo salvo lo que se indica:
 8. **Simulador**: `iPhone 17` existe en la instalación local (runtimes iOS 26.4 y 26.5). El `-destination` documentado es correcto.
 
 9. **`.gitignore`**: confirmado antes del primer commit. `*.xcodeproj` y `*.xcworkspace` fuera de git es lo correcto con Tuist.
+
+10. **Firma**: no hay `DEVELOPMENT_TEAM` y no hizo falta. El simulador firma ad-hoc, incluso con los entitlements de App Group y CloudKit puestos. Solo será necesario al instalar en un iPhone real.
+
+11. **El CI no dispara al empujar una rama.** Los triggers son `pull_request` y `push` a `main`. La Fase 0 se cerró abriendo el PR #1, que quedó en verde y se mergeó a `main`.
+
+12. **Push rechazado por privacidad del email.** La cuenta de GitHub bloquea los push que exponen `saleemprogramacion04@gmail.com`. Se resolvió fijando `user.email` al noreply de GitHub **en este clon**. Es configuración local: cada clon nuevo la necesita (ver «Trabajar desde Windows»).
 
 ### Entorno de IA: verificado
 
@@ -604,7 +640,7 @@ Criterios de aceptación por fase:
 - **UI** — galería de previews revisada en tema claro y oscuro; recorrido manual en simulador de crear cuenta → registrar gasto → verlo en Resumen y en Movimientos → editarlo → borrarlo, con el patrimonio actualizándose en cada paso.
 - **Import/Export** — exportar, borrar la base de datos, reimportar, y comprobar que el patrimonio y el número de movimientos coinciden exactamente.
 - **Sync** — dos simuladores con la misma cuenta de iCloud; un cambio en uno aparece en el otro; editar el mismo movimiento en ambos resuelve sin duplicar ni perder datos.
-- **CI** — verde en cada push. Un cambio que rompa la ley de dependencias entre módulos debe fallar en `tuist generate`.
+- **CI** — verde en cada PR. Un cambio que rompa la ley de dependencias entre módulos debe fallar en `tuist generate`, y solo si el módulo está **declarado como target** en `Project.swift`: un archivo suelto bajo `Modules/Features/` sin target no lo ve nadie.
 
 ---
 
@@ -629,6 +665,7 @@ No bloquean nada, pero hay que resolverlos cuando toque:
 - **Responder siempre en español.**
 - **No tomar decisiones de arquitectura en solitario**: presentar pros y contras, y esperar decisión del usuario.
 - **No añadir features, refactors ni mejoras no pedidas.** Sugerirlas si procede.
+- **Sin atribución de IA en el repositorio**: ni `Co-Authored-By`, ni «Generated with Claude Code», ni menciones a Claude o Anthropic en commits, PRs, issues o comentarios. El autor es el usuario.
 - Preguntar ante cualquier ambigüedad antes de empezar.
 - Los subagentes de este proyecto usan `model: opus`.
 - Ejecutar los tests relevantes tras cada cambio e incluir el comando concreto de verificación en la respuesta.

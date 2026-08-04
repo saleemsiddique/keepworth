@@ -78,9 +78,17 @@ Todo texto visible vive en un String Catalog, en inglés y español. Un literal 
 
 Solo GRDB está aprobada. Cualquier otra librería se propone al usuario con alternativas antes de instalarla, nunca se añade por iniciativa propia.
 
+### Git
+
+Nada de lo que quede en el repositorio lleva atribución de IA: sin `Co-Authored-By: Claude`, sin `🤖 Generated with Claude Code`, sin menciones a Claude, Anthropic o Claude Code en mensajes de commit, cuerpos de PR, issues ni comentarios. El autor es el usuario y el mensaje describe el cambio y su porqué, nada más.
+
+El CI dispara en `pull_request` y en `push` a `main`: **empujar una rama sin abrir PR no ejecuta nada.**
+
 ---
 
 ## Comandos
+
+**Solo funcionan en el Mac.** Tuist y `swift-format` no existen en Windows, así que desde ahí no se puede compilar, testear ni formatear, y los dos hooks quedan inertes. El detalle está en `ESTADO.md` §3.
 
 ```bash
 tuist install            # resuelve dependencias externas
