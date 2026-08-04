@@ -1,17 +1,19 @@
 import ProjectDescription
 
-// El Team ID se resuelve en el Mac al configurar el proyecto por primera vez.
-// Cambiar `bundleIdPrefix` implica cambiar también el App Group y el contenedor de CloudKit.
-let bundleIdPrefix = "com.keepworth"
-let appGroup = "group.com.keepworth"
-let iCloudContainer = "iCloud.com.keepworth"
+// El Team ID se resuelve al firmar para dispositivo físico; el simulador no lo necesita.
+// Cambiar `bundleIdPrefix` implica cambiar también el App Group y el contenedor de CloudKit,
+// y volver a registrarlos en el portal de Apple Developer.
+let bundleIdPrefix = "com.saleemsiddique.keepworth"
+let appGroup = "group.com.saleemsiddique.keepworth"
+let iCloudContainer = "iCloud.com.saleemsiddique.keepworth"
 
 let deploymentTargets: DeploymentTargets = .iOS("26.0")
 let destinations: Destinations = [.iPhone, .iPad]
 
+// El modo de lenguaje Swift 6 ya implica concurrencia estricta completa, así que
+// `SWIFT_STRICT_CONCURRENCY` sería redundante aquí.
 let baseSettings: SettingsDictionary = [
     "SWIFT_VERSION": "6.0",
-    "SWIFT_STRICT_CONCURRENCY": "complete",
     "SWIFT_TREAT_WARNINGS_AS_ERRORS": "YES",
     "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
 ]

@@ -7,13 +7,13 @@
 	     en Project.swift y en la configuración de KeepworthPersistence. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.keepworth</string>
+		<string>group.com.saleemsiddique.keepworth</string>
 	</array>
 
 	<!-- Sync con el iCloud privado del usuario (Fase 9). No hay servidor propio. -->
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
-		<string>iCloud.com.keepworth</string>
+		<string>iCloud.com.saleemsiddique.keepworth</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>
