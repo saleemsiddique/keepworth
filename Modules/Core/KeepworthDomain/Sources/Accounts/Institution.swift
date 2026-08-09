@@ -1,7 +1,7 @@
-/// Un banco o entidad financiera: BBVA, Trade Republic, MyInvestor.
+/// A bank: BBVA, Trade Republic, MyInvestor.
 ///
-/// Agrupa cuentas y da un total por entidad. **No guarda dinero ni recibe movimientos**:
-/// meterlo en `Account` obligaría a inventar una cuenta que no es una cuenta.
+/// Groups accounts and gives a total per institution. Holds no money and receives no
+/// movements, which is why it is not an `Account`.
 public struct Institution: Hashable, Sendable, Identifiable {
     public let id: InstitutionID
     public let name: String
@@ -17,6 +17,5 @@ public struct Institution: Hashable, Sendable, Identifiable {
 }
 
 public enum InstitutionError: Error, Equatable {
-    /// Un banco sin nombre no se puede distinguir de otro en la lista.
     case blankName
 }

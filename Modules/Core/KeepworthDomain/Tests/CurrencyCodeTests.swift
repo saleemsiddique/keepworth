@@ -2,13 +2,13 @@ import Testing
 
 @testable import KeepworthDomain
 
-@Test("Un código ISO 4217 válido se acepta")
+@Test("A valid ISO 4217 code is accepted")
 func acceptsValidIsoCode() throws {
     #expect(try CurrencyCode("EUR").value == "EUR")
 }
 
 @Test(
-    "Un código mal formado se rechaza",
+    "A malformed code is rejected",
     arguments: ["eur", "EU", "EURO", "E1R", "", "€€€"]
 )
 func rejectsMalformedCode(code: String) {
@@ -17,7 +17,7 @@ func rejectsMalformedCode(code: String) {
     }
 }
 
-@Test("Las divisas de v1 tienen dos decimales")
+@Test("v1 currencies have two decimals")
 func usesTwoDecimalsInFirstVersion() {
     #expect(CurrencyCode.eur.minorUnitExponent == 2)
 }

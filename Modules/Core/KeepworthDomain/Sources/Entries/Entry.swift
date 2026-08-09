@@ -1,17 +1,15 @@
-/// Un movimiento completo, por partida doble: el dinero sale de un sitio y entra en otro.
+/// A movement in double entry: money leaves one place and enters another.
 ///
-/// Un gasto de 42,30 € no es «−42,30» suelto: son dos líneas, una que baja el saldo de la
-/// cuenta y otra que lo imputa a una categoría. Por eso el informe del mes y la variación
-/// del patrimonio no pueden contradecirse — son dos lecturas de las mismas líneas.
+/// €42.30 spent is not a loose "−42.30": it is two lines, one lowering the account and one
+/// charging a category. That is why the period report and the net worth delta cannot
+/// contradict each other.
 ///
-/// Construir un `Entry` es la única forma de crear un movimiento, y su inicializador rechaza
-/// todo lo que no cuadre. Un asiento inválido no llega a existir.
+/// This initialiser is the only way to make a movement, and it rejects anything that does
+/// not balance. An invalid entry never comes into existence.
 public struct Entry: Hashable, Sendable, Identifiable {
     public let id: EntryID
-    /// El día en que ocurrió. Un asiento con fecha futura no cuenta en el patrimonio hasta
-    /// que llega ese día.
+    /// A future-dated entry does not count towards net worth until its day arrives.
     public let occurredOn: CalendarDate
-    /// A quién se le pagó o de quién se cobró: «Mercadona».
     public let payee: String?
     public let note: String?
     public let lines: [EntryLine]
@@ -44,17 +42,15 @@ public struct Entry: Hashable, Sendable, Identifiable {
         self.lines = lines
     }
 
-    /// La divisa en la que cuadra el asiento: la del usuario.
     public var baseCurrency: CurrencyCode { lines[0].baseAmount.currency }
 }
 
 public enum EntryError: Error, Equatable {
-    /// Un movimiento con una sola línea no es contabilidad, es un número suelto: no dice
-    /// de dónde salió el dinero ni adónde fue.
+    /// A one-line movement is a loose number, not accounting: it says neither where the
+    /// money came from nor where it went.
     case needsAtLeastTwoLines(found: Int)
-    /// Lo que sale y lo que entra no coinciden. `residual` es lo que sobra o falta.
+    /// What went out and what came in do not match. `residual` is the difference.
     case unbalanced(residual: Money)
-    /// Las líneas declaran divisas base distintas. La divisa base es la del usuario y es una
-    /// sola: si dos líneas discrepan, el importe de alguna está mal calculado.
+    /// Lines disagree on the base currency. There is only one, so some amount is wrong.
     case mixedBaseCurrencies
 }

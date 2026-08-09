@@ -2,7 +2,7 @@ import Testing
 
 @testable import KeepworthDomain
 
-/// Arranca el libro con un saldo inicial en una cuenta, por el mismo camino que la app.
+/// Opens the ledger with a starting balance, through the same path the app uses.
 private func openingBalance(
     of amount: Money,
     in account: Account,
@@ -15,13 +15,13 @@ private func openingBalance(
     )
 }
 
-@Test("El patrimonio mezcla activo y pasivo con el signo correcto")
+@Test("Net worth mixes assets and liabilities with the right sign")
 func calculatesNetWorthMixingAssetsAndLiabilities() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
     try await openingBalance(
         of: euros(200_000), in: ledger.checking, on: try day(2026, 1, 1), of: ledger, into: entries)
-    // Una compra con tarjeta: 600 € de deuda nueva.
+    // A card purchase: €600 of new debt.
     try await RecordExpense(accounts: ledger.accounts, entries: entries).execute(
         RecordExpense.Request(
             accountID: ledger.creditCard.id,
@@ -37,7 +37,7 @@ func calculatesNetWorthMixingAssetsAndLiabilities() async throws {
     #expect(netWorth == euros(140_000))
 }
 
-@Test("Un movimiento fechado en el futuro no cuenta en el patrimonio de hoy")
+@Test("A future-dated movement does not count towards today's net worth")
 func excludesFutureDatedEntriesFromNetWorth() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -58,7 +58,7 @@ func excludesFutureDatedEntriesFromNetWorth() async throws {
     #expect(try await useCase.execute(asOf: try day(2026, 2, 1), in: .eur) == euros(120_000))
 }
 
-@Test("El patrimonio no varía al crear, renombrar ni archivar una categoría")
+@Test("Net worth does not move when a category is created, renamed or archived")
 func netWorthIgnoresCategoryChanges() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -100,7 +100,7 @@ func netWorthIgnoresCategoryChanges() async throws {
     #expect(after == before)
 }
 
-@Test("Un traspaso entre cuentas no mueve el patrimonio")
+@Test("A transfer between accounts leaves net worth unchanged")
 func transferLeavesNetWorthUnchanged() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -122,7 +122,7 @@ func transferLeavesNetWorthUnchanged() async throws {
     #expect(try await useCase.execute(asOf: asOf, in: .eur) == before)
 }
 
-@Test("El saldo de una cuenta es la suma de sus líneas, en su divisa")
+@Test("An account balance is the sum of its lines, in its own currency")
 func calculatesAccountBalance() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -143,13 +143,13 @@ func calculatesAccountBalance() async throws {
     #expect(balance == euros(195_770))
 }
 
-@Test("El total de un banco suma solo sus cuentas")
+@Test("A bank total sums only its own accounts")
 func calculatesInstitutionTotal() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
     try await openingBalance(
         of: euros(200_000), in: ledger.checking, on: try day(2026, 1, 1), of: ledger, into: entries)
-    // El efectivo no está en ningún banco: no debe entrar en el total del BBVA.
+    // Cash belongs to no bank, so it must stay out of the BBVA total.
     try await openingBalance(
         of: euros(10000), in: ledger.cash, on: try day(2026, 1, 1), of: ledger, into: entries)
 
@@ -162,7 +162,7 @@ func calculatesInstitutionTotal() async throws {
     #expect(total == euros(200_000))
 }
 
-@Test("El informe separa ingresos de gastos y los ordena de mayor a menor")
+@Test("The report separates income from expenses and orders them largest first")
 func summarizesPeriodByCategory() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -201,7 +201,7 @@ func summarizesPeriodByCategory() async throws {
     #expect(summary.income == [AccountTotal(accountID: ledger.salary.id, total: euros(210_000))])
 }
 
-@Test("Un traspaso no aparece en el informe del periodo")
+@Test("A transfer does not appear in the period report")
 func summaryIgnoresTransfers() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -222,10 +222,10 @@ func summaryIgnoresTransfers() async throws {
     #expect(summary.saved == Money.zero(in: .eur))
 }
 
-@Test("Lo ahorrado en el mes es exactamente lo que varió el patrimonio")
+@Test("What was saved in the month is exactly what net worth moved")
 func savedInPeriodMatchesNetWorthChange() async throws {
-    // Es la garantía que justifica la partida doble: el informe y el patrimonio son dos
-    // lecturas de las mismas líneas, así que no pueden contradecirse ni por un céntimo.
+    // The guarantee that justifies double entry: the report and net worth are two readings
+    // of the same lines, so they cannot disagree by a cent.
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
     try await openingBalance(
@@ -256,7 +256,7 @@ func savedInPeriodMatchesNetWorthChange() async throws {
             occurredOn: try day(2026, 1, 10)
         )
     )
-    // Un traspaso, que no debe alterar ninguno de los dos lados de la igualdad.
+    // A transfer, which must not move either side of the equality.
     try await TransferBetweenAccounts(accounts: ledger.accounts, entries: entries).execute(
         TransferBetweenAccounts.Request(
             sourceAccountID: ledger.checking.id,
@@ -276,16 +276,16 @@ func savedInPeriodMatchesNetWorthChange() async throws {
 
     #expect(summary.netWorthChange == change)
     #expect(summary.saved == euros(125_770))
-    // En un mes sin cuentas nuevas, lo ahorrado y la variación del patrimonio son lo mismo.
+    // In a month with no new accounts, saved and the net worth delta are the same.
     #expect(summary.openingBalances == Money.zero(in: .eur))
     #expect(summary.netWorthChange == summary.saved)
 }
 
-@Test("Crear una cuenta a mitad de mes no descuadra el informe con el patrimonio")
+@Test("Creating an account mid-month does not put the report at odds with net worth")
 func netWorthChangeAbsorbsOpeningBalancesInsidePeriod() async throws {
-    // El saldo de partida sube el patrimonio sin ser un ingreso: ese dinero ya era tuyo.
-    // Si el informe lo ignorase, sus cifras y el patrimonio discreparían justo el mes en que
-    // el usuario da de alta una cuenta, y parecería un bug en vez de contabilidad correcta.
+    // A starting balance raises net worth without being income: that money was already
+    // yours. If the report ignored it, its figures and net worth would disagree in the very
+    // month an account is created, and that would read as a bug.
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
     try await openingBalance(
@@ -295,7 +295,7 @@ func netWorthChangeAbsorbsOpeningBalancesInsidePeriod() async throws {
         of: ledger,
         into: entries
     )
-    // Una cuenta nueva declarada dentro del periodo.
+    // A new account declared inside the period.
     try await openingBalance(
         of: euros(75000),
         in: ledger.cash,
@@ -326,7 +326,7 @@ func netWorthChangeAbsorbsOpeningBalancesInsidePeriod() async throws {
     #expect(summary.netWorthChange == change)
 }
 
-@Test("Una cuenta puede empezar con saldo negativo, como una tarjeta con deuda")
+@Test("An account can open with a negative balance, like a card carrying debt")
 func acceptsNegativeOpeningBalance() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -345,7 +345,7 @@ func acceptsNegativeOpeningBalance() async throws {
     #expect(netWorth == euros(-60000))
 }
 
-@Test("Un saldo inicial de cero se rechaza")
+@Test("A zero opening balance is rejected")
 func rejectsZeroOpeningBalance() async throws {
     let ledger = try Ledger()
     let useCase = SetOpeningBalance(
@@ -364,7 +364,7 @@ func rejectsZeroOpeningBalance() async throws {
     }
 }
 
-@Test("Un saldo inicial sobre una categoría se rechaza")
+@Test("An opening balance on a category is rejected")
 func rejectsOpeningBalanceOnCategory() async throws {
     let ledger = try Ledger()
     let useCase = SetOpeningBalance(
@@ -383,7 +383,7 @@ func rejectsOpeningBalanceOnCategory() async throws {
     }
 }
 
-@Test("Sin la cuenta interna de saldo inicial, el caso de uso falla en vez de inventarla")
+@Test("Without the internal opening balance account, the use case fails instead of inventing one")
 func rejectsOpeningBalanceWithoutSystemAccount() async throws {
     let ledger = try Ledger()
     let withoutEquity = InMemoryAccountRepository([ledger.checking, ledger.groceries])
@@ -400,7 +400,7 @@ func rejectsOpeningBalanceWithoutSystemAccount() async throws {
     }
 }
 
-@Test("El saldo inicial no aparece como ingreso en el informe")
+@Test("An opening balance does not show up as income in the report")
 func openingBalanceDoesNotContaminateTheReport() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()

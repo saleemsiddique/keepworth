@@ -1,15 +1,11 @@
 extension Entry {
-    /// Un asiento de dos líneas: el importe sale de una cuenta y entra en otra.
+    /// A two-line entry: the amount leaves one account and enters another.
     ///
-    /// Es la forma de **los tres** movimientos que el usuario registra. Un gasto sale de la
-    /// cuenta y entra en una categoría de gasto; un ingreso sale de una categoría de ingreso
-    /// y entra en la cuenta; un traspaso sale de una cuenta y entra en otra. Lo único que
-    /// cambia es el `kind` de las cuentas de cada lado, y por eso no hacen falta tres
-    /// constructores distintos.
+    /// This is the shape of all three movements the user records. Only the `kind` of the
+    /// accounts on each side changes, which is why there are not three constructors.
     ///
-    /// En v1 el importe en divisa base coincide con el de la cuenta, porque ambas comparten
-    /// divisa. Cuando se abra multi-divisa, aquí es donde entrará el importe en divisa base
-    /// como dato aparte.
+    /// Internal on purpose: building a movement always goes through a use case, which is
+    /// what validates the account kinds.
     static func twoLine(
         occurredOn: CalendarDate,
         payee: String?,

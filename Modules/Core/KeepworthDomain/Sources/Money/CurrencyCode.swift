@@ -1,8 +1,7 @@
-/// Divisa según ISO 4217: tres letras mayúsculas.
+/// An ISO 4217 currency: three uppercase letters.
 ///
-/// El usuario elige una al empezar y todas sus cuentas la comparten. El tipo existe
-/// desde el día uno aunque la v1 sea monodivisa: es lo que permite activar multi-divisa
-/// más adelante sin migrar datos ni reescribir consultas.
+/// The user picks one and every account shares it. The type exists from day one even
+/// though v1 is single-currency, so enabling multi-currency needs no data migration.
 public struct CurrencyCode: Hashable, Sendable, CustomStringConvertible {
     public let value: String
 
@@ -13,18 +12,17 @@ public struct CurrencyCode: Hashable, Sendable, CustomStringConvertible {
         self.value = value
     }
 
-    /// Solo para las constantes de este archivo, cuyo valor es correcto por construcción.
+    /// For the constants below, whose values are correct by construction.
     private init(validated value: String) {
         self.value = value
     }
 
     public var description: String { value }
 
-    /// Cuántos dígitos decimales tiene la divisa: 2 significa que la unidad menor es el céntimo.
+    /// Decimal digits in the currency: 2 means the minor unit is the cent.
     ///
-    /// En v1 todas las divisas asumen 2 porque la app es monodivisa y el usuario elige entre
-    /// divisas de dos decimales. El yen tiene 0 y el bitcóin 8, así que al abrir multi-divisa
-    /// esto pasa a depender de `value`: es el único punto del dominio que habrá que tocar.
+    /// Hardcoded for v1. The yen has 0 and bitcoin has 8, so this is the single place the
+    /// domain changes when multi-currency opens.
     public var minorUnitExponent: Int { 2 }
 
     private static func isValidCode(_ value: String) -> Bool {
@@ -39,6 +37,5 @@ extension CurrencyCode {
 }
 
 public enum CurrencyCodeError: Error, Equatable {
-    /// El código no son tres letras ASCII mayúsculas.
     case malformedCode(String)
 }

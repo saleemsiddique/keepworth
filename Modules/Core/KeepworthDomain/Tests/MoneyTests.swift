@@ -2,28 +2,28 @@ import Testing
 
 @testable import KeepworthDomain
 
-@Test("Sumar dos importes de la misma divisa da la suma de sus unidades menores")
+@Test("Adding two amounts of the same currency sums their minor units")
 func addsAmountsOfTheSameCurrency() throws {
     let total = try Money(minorUnits: 4230, currency: .eur) + Money(minorUnits: 770, currency: .eur)
 
     #expect(total == Money(minorUnits: 5000, currency: .eur))
 }
 
-@Test("Sumar importes de divisas distintas falla en vez de aproximar")
+@Test("Adding amounts in different currencies fails instead of approximating")
 func rejectsAdditionBetweenDifferentCurrencies() {
     #expect(throws: MoneyError.currencyMismatch(expected: .eur, found: .usd)) {
         try Money(minorUnits: 100, currency: .eur) + Money(minorUnits: 100, currency: .usd)
     }
 }
 
-@Test("Restar importes de divisas distintas falla en vez de aproximar")
+@Test("Subtracting amounts in different currencies fails instead of approximating")
 func rejectsSubtractionBetweenDifferentCurrencies() {
     #expect(throws: MoneyError.currencyMismatch(expected: .eur, found: .gbp)) {
         try Money(minorUnits: 100, currency: .eur) - Money(minorUnits: 100, currency: .gbp)
     }
 }
 
-@Test("Restar da la diferencia, con signo")
+@Test("Subtracting gives the signed difference")
 func subtractsAmounts() throws {
     let difference =
         try Money(minorUnits: 100, currency: .eur)
@@ -32,19 +32,19 @@ func subtractsAmounts() throws {
     #expect(difference == Money(minorUnits: -150, currency: .eur))
 }
 
-@Test("Un desbordamiento de Int64 falla en vez de dar la vuelta al signo")
+@Test("An Int64 overflow fails instead of flipping the sign")
 func rejectsOverflow() {
     #expect(throws: MoneyError.amountOverflow) {
         try Money(minorUnits: .max, currency: .eur) + Money(minorUnits: 1, currency: .eur)
     }
 }
 
-@Test("La suma de una colección vacía es cero en la divisa indicada")
+@Test("Summing an empty collection gives zero in the given currency")
 func sumsEmptyCollectionToZero() throws {
     #expect(try Money.sum([], in: .eur) == Money.zero(in: .eur))
 }
 
-@Test("La suma de una colección acumula todas sus unidades menores")
+@Test("Summing a collection accumulates all its minor units")
 func sumsCollection() throws {
     let amounts = [
         Money(minorUnits: -4230, currency: .eur),
@@ -55,28 +55,28 @@ func sumsCollection() throws {
     #expect(try Money.sum(amounts, in: .eur) == Money(minorUnits: 1000, currency: .eur))
 }
 
-@Test("Negar un importe conserva la divisa y cambia el signo")
+@Test("Negating an amount keeps the currency and flips the sign")
 func negatesKeepingCurrency() throws {
     let negated = try Money(minorUnits: 4230, currency: .eur).negated()
 
     #expect(negated == Money(minorUnits: -4230, currency: .eur))
 }
 
-@Test("Negar el importe más pequeño posible falla en vez de abortar el proceso")
+@Test("Negating the smallest possible amount fails instead of trapping")
 func rejectsNegatingTheSmallestAmount() {
-    // -Int64.min no cabe en Int64. Negarlo directamente sería un trap, no un error, y el
-    // dato puede venir de un CSV importado, no solo del teclado del usuario.
+    // -Int64.min does not fit in Int64. Negating directly would trap rather than throw,
+    // and the value can come from an imported CSV, not only from the keyboard.
     #expect(throws: MoneyError.amountOverflow) {
         try Money(minorUnits: .min, currency: .eur).negated()
     }
 }
 
-@Test("Diez céntimos sumados diez veces son exactamente un euro")
+@Test("Ten cents added ten times is exactly one euro")
 func addsTenCentsTenTimesExactly() throws {
     let tenCents = Money(minorUnits: 10, currency: .eur)
 
     let total = try Money.sum(Array(repeating: tenCents, count: 10), in: .eur)
 
-    // El mismo cálculo con Double da 0,9999999999999999.
+    // The same sum in Double gives 0.9999999999999999.
     #expect(total == Money(minorUnits: 100, currency: .eur))
 }

@@ -1,25 +1,21 @@
-/// Qué es una cuenta, y por tanto cómo se comporta.
+/// What an account is, and therefore how it behaves.
 ///
-/// Es el único dato que decide si algo suma al patrimonio, si puede pertenecer a un banco
-/// y si la UI lo enseña como cuenta o como categoría. No hay un tipo `Category`: una
-/// categoría es una cuenta `.expense` o `.income`, y eso es lo que hace que gasto, ingreso
-/// y traspaso sean la misma operación.
+/// There is no `Category` type: a category is an `.expense` or `.income` account, which is
+/// what makes expense, income and transfer the same operation.
 public enum AccountKind: String, CaseIterable, Hashable, Sendable {
-    /// Cuentas bancarias, efectivo, carteras. Suma al patrimonio.
+    /// Bank accounts, cash, wallets.
     case asset
-    /// Tarjetas de crédito, préstamos. Resta del patrimonio.
+    /// Credit cards, loans.
     case liability
-    /// Categoría de gasto. Nunca toca el patrimonio.
+    /// Expense category.
     case expense
-    /// Categoría de ingreso. Nunca toca el patrimonio.
+    /// Income category.
     case income
-    /// Contrapartida del saldo inicial. Interna y oculta.
+    /// Counterpart of opening balances. Internal and hidden.
     case equity
 
-    /// Si el saldo de esta cuenta forma parte del patrimonio neto.
-    ///
-    /// Que una categoría devolviera `true` aquí es el bug más grave posible de la app:
-    /// le diría al usuario que tiene dinero que no tiene.
+    /// A category returning `true` here would tell the user they have money they do not
+    /// have: the worst bug this app can ship.
     public var countsTowardsNetWorth: Bool {
         switch self {
         case .asset, .liability: true
@@ -27,9 +23,8 @@ public enum AccountKind: String, CaseIterable, Hashable, Sendable {
         }
     }
 
-    /// Si es un sitio donde hay dinero de verdad y por tanto tiene saldo.
-    ///
-    /// El «saldo» de una categoría no es un saldo: es cuánto ha pasado por ella.
+    /// Whether it is a place holding real money. A category's "balance" is not a balance,
+    /// it is how much went through it.
     public var holdsMoney: Bool {
         switch self {
         case .asset, .liability: true
@@ -37,10 +32,7 @@ public enum AccountKind: String, CaseIterable, Hashable, Sendable {
         }
     }
 
-    /// Si una cuenta de este tipo puede pertenecer a un banco.
-    ///
-    /// Se deriva de `holdsMoney` en lugar de repetir la lista: un banco agrupa sitios donde
-    /// hay dinero, así que si algún día dejaran de coincidir sería porque la definición de
-    /// banco ha cambiado, y eso se decide aquí.
+    /// Derived rather than repeating the list: a bank groups places holding money, so the
+    /// day these diverge it is the definition of a bank that changed.
     public var canBelongToInstitution: Bool { holdsMoney }
 }

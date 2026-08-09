@@ -1,42 +1,35 @@
-/// Acceso a los bancos.
-///
-/// Se declara aquí y se implementa en `KeepworthPersistence`. Las features hablan con este
-/// protocolo, nunca con GRDB, y por eso se pueden testear con dobles en memoria.
+/// Declared here, implemented in `KeepworthPersistence`. Features talk to these protocols,
+/// never to GRDB, which is what makes them testable with in-memory doubles.
 public protocol InstitutionRepository: Sendable {
-    /// Falla si no existe, en vez de devolver `nil`: un banco que no está es un error del
-    /// que llama, no un caso normal que cada llamador tenga que defender.
+    /// Throws instead of returning `nil`: a missing bank is a caller error, not a normal
+    /// case every caller has to guard against.
     func institution(withID id: InstitutionID) async throws -> Institution
     func allInstitutions() async throws -> [Institution]
 }
 
-/// Acceso a las cuentas y a las categorías, que son la misma tabla.
 public protocol AccountRepository: Sendable {
     func account(withID id: AccountID) async throws -> Account
     func accounts(ofKinds kinds: Set<AccountKind>) async throws -> [Account]
     func accounts(inInstitution id: InstitutionID) async throws -> [Account]
 }
 
-/// Acceso a los movimientos.
 public protocol EntryRepository: Sendable {
     func save(_ entry: Entry) async throws
-    /// Devuelve las líneas **vivas** que cumplen la consulta: ni la línea ni su asiento
-    /// pueden estar borrados. Filtrar solo por la línea deja vivas las de asientos borrados
-    /// y descuadra los saldos sin dar ningún síntoma.
+    /// Returns **live** lines only: neither the line nor its entry may be deleted. Filtering
+    /// on the line alone leaves lines of deleted entries alive and silently unbalances
+    /// balances.
     func lines(matching query: EntryLineQuery) async throws -> [EntryLine]
 }
 
-/// Qué líneas se quieren leer.
-///
-/// Un solo tipo de consulta en vez de un método por combinación: el patrimonio pide las de
-/// unas cuentas hasta una fecha, y el informe las de un rango, pero es la misma pregunta.
+/// One query type instead of a method per combination: net worth asks for some accounts up
+/// to a date and the report asks for a range, but it is the same question.
 public struct EntryLineQuery: Hashable, Sendable {
-    /// Cuentas cuyas líneas interesan. Siempre explícitas: no hay «todas», porque ninguna
-    /// pregunta del dominio lo necesita y una consulta sin filtro de cuenta sobre un
-    /// historial largo es justo la que no queremos que nadie escriba por descuido.
+    /// Always explicit. There is no "all accounts": no domain question needs it, and an
+    /// unfiltered query over a long history is the one nobody should write by accident.
     public let accountIDs: Set<AccountID>
-    /// Primer día incluido. `nil` significa desde el principio.
+    /// `nil` means from the beginning.
     public let from: CalendarDate?
-    /// Último día incluido. `nil` significa hasta el final, **incluido el futuro**.
+    /// `nil` means to the end, **including the future**.
     public let through: CalendarDate?
 
     public init(

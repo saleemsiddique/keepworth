@@ -1,11 +1,7 @@
-/// Un importe: unidades menores enteras y la divisa a la que pertenecen.
+/// An amount in whole minor units of a currency. €42.30 is `Money(4230, .eur)`.
 ///
-/// 42,30 € son `Money(minorUnits: 4230, currency: .eur)`. **Nunca un `Double`**: los
-/// binarios de coma flotante no representan 0,10 exactamente, así que sumar diez veces
-/// diez céntimos deja un resto que descuadra los asientos.
-///
-/// Operar entre divisas distintas lanza error en lugar de aproximar. Convertir es una
-/// decisión con un tipo de cambio detrás, no algo que un operador deba hacer solo.
+/// Never a `Double`: binary floating point cannot represent 0.10, so ten cents added ten
+/// times leaves a remainder that unbalances entries.
 public struct Money: Hashable, Sendable {
     public let minorUnits: Int64
     public let currency: CurrencyCode
@@ -23,12 +19,8 @@ public struct Money: Hashable, Sendable {
     public var isNegative: Bool { minorUnits < 0 }
     public var isPositive: Bool { minorUnits > 0 }
 
-    /// El mismo importe con el signo cambiado.
-    ///
-    /// Lanza en lugar de negar directamente porque `-Int64.min` no cabe en `Int64` y aborta
-    /// el proceso. El importe es irreal, pero la entrada no siempre la escribe el usuario:
-    /// el import de CSV la trae de un archivo externo, y ahí un dato absurdo tiene que dar
-    /// un error, no tumbar la app.
+    /// Throws rather than negating directly: `-Int64.min` traps, and amounts can come from
+    /// an imported CSV rather than the keyboard.
     public func negated() throws -> Money {
         try Money.zero(in: currency) - self
     }
@@ -41,10 +33,8 @@ public struct Money: Hashable, Sendable {
         try lhs.combined(with: rhs) { $0.subtractingReportingOverflow($1) }
     }
 
-    /// Suma una colección de importes, que deben compartir divisa.
-    ///
-    /// Recibe la divisa explícitamente porque una colección vacía suma cero, y cero
-    /// sin divisa no es un importe.
+    /// Takes the currency explicitly because an empty sequence sums to zero, and zero
+    /// without a currency is not an amount.
     public static func sum(
         _ amounts: some Sequence<Money>,
         in currency: CurrencyCode
@@ -68,9 +58,8 @@ public struct Money: Hashable, Sendable {
 }
 
 public enum MoneyError: Error, Equatable {
-    /// Se intentó operar entre dos divisas distintas sin un tipo de cambio explícito.
+    /// Mixing currencies without an explicit exchange rate. Approximating would unbalance
+    /// entries, so this fails instead.
     case currencyMismatch(expected: CurrencyCode, found: CurrencyCode)
-    /// El resultado no cabe en `Int64`. Con céntimos son 92 billones de euros: el dato de
-    /// entrada está mal, y fallar aquí es mejor que guardar un importe con el signo cambiado.
     case amountOverflow
 }

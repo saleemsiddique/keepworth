@@ -1,7 +1,7 @@
 @testable import KeepworthDomain
 
-/// Un juego de cuentas y categorías de ejemplo, para que cada test hable de BBVA y de la
-/// nómina en vez de montar seis cuentas antes de llegar a lo que comprueba.
+/// Sample accounts and categories, so each test can talk about BBVA and payroll instead
+/// of building six accounts before reaching what it checks.
 struct Ledger {
     let bbva: Institution
     let checking: Account
@@ -10,8 +10,8 @@ struct Ledger {
     let groceries: Account
     let rent: Account
     let salary: Account
-    /// La cuenta interna contra la que cuadran los saldos de partida. La crea la semilla del
-    /// primer arranque en la app real.
+    /// The internal account starting balances balance against. The first-launch seed
+    /// creates it in the real app.
     let openingBalance: Account
 
     init() throws {

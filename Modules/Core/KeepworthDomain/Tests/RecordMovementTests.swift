@@ -2,7 +2,7 @@ import Testing
 
 @testable import KeepworthDomain
 
-@Test("Un gasto sale de la cuenta y entra en la categoría, por el mismo importe")
+@Test("An expense leaves the account and enters the category for the same amount")
 func recordsExpenseAsBalancedEntry() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -26,7 +26,7 @@ func recordsExpenseAsBalancedEntry() async throws {
     #expect(await entries.savedEntries == [entry])
 }
 
-@Test("Un ingreso entra en la cuenta y sale de la categoría de ingreso")
+@Test("Income enters the account and leaves the income category")
 func recordsIncomeAsBalancedEntry() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -47,7 +47,7 @@ func recordsIncomeAsBalancedEntry() async throws {
         entry.lines.first(where: { $0.accountID == ledger.salary.id })?.amount == euros(-210_000))
 }
 
-@Test("Un gasto con una categoría de ingreso se rechaza")
+@Test("An expense against an income category is rejected")
 func rejectsExpenseAgainstIncomeCategory() async throws {
     let ledger = try Ledger()
     let useCase = RecordExpense(accounts: ledger.accounts, entries: InMemoryEntryRepository())
@@ -64,7 +64,7 @@ func rejectsExpenseAgainstIncomeCategory() async throws {
     }
 }
 
-@Test("Un gasto cuya «cuenta» es en realidad una categoría se rechaza")
+@Test("An expense whose account is really a category is rejected")
 func rejectsExpenseFromCategory() async throws {
     let ledger = try Ledger()
     let useCase = RecordExpense(accounts: ledger.accounts, entries: InMemoryEntryRepository())
@@ -81,7 +81,7 @@ func rejectsExpenseFromCategory() async throws {
     }
 }
 
-@Test("Un importe cero o negativo se rechaza", arguments: [Int64(0), -1, -4230])
+@Test("A zero or negative amount is rejected", arguments: [Int64(0), -1, -4230])
 func rejectsNonPositiveAmount(minorUnits: Int64) async throws {
     let ledger = try Ledger()
     let useCase = RecordExpense(accounts: ledger.accounts, entries: InMemoryEntryRepository())
@@ -98,7 +98,7 @@ func rejectsNonPositiveAmount(minorUnits: Int64) async throws {
     }
 }
 
-@Test("Una cuenta archivada no admite movimientos nuevos")
+@Test("An archived account takes no new movements")
 func rejectsMovementIntoArchivedAccount() async throws {
     let ledger = try Ledger()
     let archived = try Account(
@@ -123,7 +123,7 @@ func rejectsMovementIntoArchivedAccount() async throws {
     }
 }
 
-@Test("Un traspaso a la misma cuenta se rechaza")
+@Test("A transfer to the same account is rejected")
 func rejectsTransferToTheSameAccount() async throws {
     let ledger = try Ledger()
     let useCase = TransferBetweenAccounts(
@@ -143,7 +143,7 @@ func rejectsTransferToTheSameAccount() async throws {
     }
 }
 
-@Test("Un traspaso contra una categoría se rechaza")
+@Test("A transfer against a category is rejected")
 func rejectsTransferAgainstCategory() async throws {
     let ledger = try Ledger()
     let useCase = TransferBetweenAccounts(
@@ -163,7 +163,7 @@ func rejectsTransferAgainstCategory() async throws {
     }
 }
 
-@Test("Una cuenta que no existe se propaga como error, no como movimiento a medias")
+@Test("A missing account propagates as an error, not as a half-written movement")
 func propagatesMissingAccount() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -183,7 +183,7 @@ func propagatesMissingAccount() async throws {
     #expect(await entries.savedEntries.isEmpty)
 }
 
-@Test("Un movimiento rechazado no deja nada guardado")
+@Test("A rejected movement saves nothing")
 func savesNothingWhenValidationFails() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -202,7 +202,7 @@ func savesNothingWhenValidationFails() async throws {
     #expect(await entries.savedEntries.isEmpty)
 }
 
-@Test("Pagar con tarjeta de crédito aumenta la deuda y baja el patrimonio")
+@Test("Paying by credit card grows the debt and lowers net worth")
 func recordsCreditCardPayment() async throws {
     let ledger = try Ledger()
     let entries = InMemoryEntryRepository()
@@ -217,7 +217,7 @@ func recordsCreditCardPayment() async throws {
         )
     )
 
-    // El saldo de la tarjeta se hace más negativo: eso es más deuda.
+    // The card's balance goes further negative: that is more debt.
     #expect(
         entry.lines.first(where: { $0.accountID == ledger.creditCard.id })?.amount == euros(-6000))
 }
