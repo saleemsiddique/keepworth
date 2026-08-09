@@ -11,8 +11,10 @@ Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta cap
 **Expone**:
 - Entidades: `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine`.
 - Protocolos de repositorio: `InstitutionRepository`, `AccountRepository`, `EntryRepository`. Definidos aquí, implementados en `KeepworthPersistence`.
-- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
+- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
 - Errores de dominio descriptivos, nunca `nil` para señalar fallo.
+
+`Entry.twoLine` es **interno a propósito**: construir un movimiento pasa siempre por un caso de uso, que es quien valida los tipos de cuenta. Si una pantalla necesita un movimiento que hoy no existe, se añade un caso de uso, no se abre el constructor.
 
 ## Invariantes
 
@@ -43,4 +45,6 @@ Los casos de uso construyen ese asiento a partir de una entrada simple. La UI nu
 
 Swift Testing. Es la capa con mayor exigencia de cobertura del proyecto: aquí un bug es dinero mal contado.
 
-Casos que siempre deben existir: asiento desequilibrado rechazado, asiento de una sola línea rechazado, suma entre divisas distintas rechazada sin tipo de cambio, cuenta de gasto o ingreso con banco rechazada, patrimonio neto correcto con cuentas de activo y de pasivo mezcladas, patrimonio neto que **no varía** al crear, renombrar o archivar una categoría, e informe del mes que coincide al céntimo con la variación del patrimonio en ese mes.
+Casos que siempre deben existir: asiento desequilibrado rechazado, asiento de una sola línea rechazado, suma entre divisas distintas rechazada sin tipo de cambio, cuenta de gasto o ingreso con banco rechazada, patrimonio neto correcto con cuentas de activo y de pasivo mezcladas, patrimonio neto que **no varía** al crear, renombrar o archivar una categoría, y `PeriodSummary.netWorthChange` que coincide al céntimo con la variación del patrimonio en el periodo.
+
+Ese último tiene una trampa que ya costó una corrección: **el saldo de partida de una cuenta sube el patrimonio sin ser un ingreso.** Por eso la igualdad se comprueba contra `netWorthChange` —que suma `saved` y `openingBalances`— y no contra `saved` a secas, y hay un test con una cuenta declarada dentro del periodo que lo fija.
