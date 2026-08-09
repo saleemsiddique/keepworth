@@ -1,7 +1,5 @@
-/// Comprueba que un importe puede moverse entre estas dos cuentas.
-///
-/// Se valida antes de construir el asiento para que el error diga qué está mal —una cuenta
-/// archivada, un importe negativo— en lugar de un genérico «no cuadra».
+/// Checked before building the entry so the error names what is wrong — an archived
+/// account, a negative amount — instead of a generic "does not balance".
 func validateMovement(of amount: Money, outOf source: Account, into destination: Account) throws {
     guard amount.isPositive else {
         throw MovementError.amountMustBePositive
@@ -19,22 +17,18 @@ func validateMovement(of amount: Money, outOf source: Account, into destination:
     }
 }
 
-/// Una cuenta archivada sigue en el histórico pero ya no admite movimientos nuevos: por eso
-/// se archiva en vez de borrarse cuando tiene movimientos.
 private func validateAcceptsNewMovements(_ account: Account) throws {
     guard !account.isArchived else {
         throw MovementError.archivedAccount(account.id)
     }
 }
 
-/// Comprueba que una cuenta es de un tipo donde hay dinero de verdad.
 func validateHoldsMoney(_ account: Account) throws {
     guard account.kind.holdsMoney else {
         throw MovementError.accountCannotHoldMoney(account.kind)
     }
 }
 
-/// Comprueba que una cuenta es una categoría del tipo esperado.
 func validateIsCategory(_ account: Account, ofKind expected: AccountKind) throws {
     guard account.kind == expected else {
         throw MovementError.wrongCategoryKind(expected: expected, found: account.kind)
@@ -42,22 +36,18 @@ func validateIsCategory(_ account: Account, ofKind expected: AccountKind) throws
 }
 
 public enum MovementError: Error, Equatable {
-    /// El usuario introduce cuánto se movió, siempre en positivo. El signo lo pone la
-    /// contabilidad según de qué lado esté cada cuenta.
+    /// The user always enters how much moved, positive. The sign comes from which side each
+    /// account sits on.
     case amountMustBePositive
-    /// Se usó una categoría donde hacía falta una cuenta con dinero. Una categoría no tiene
-    /// saldo: solo registra cuánto ha pasado por ella.
+    /// A category was used where an account holding money was needed.
     case accountCannotHoldMoney(AccountKind)
-    /// Se usó una cuenta o una categoría del tipo equivocado en el lado de la categoría.
     case wrongCategoryKind(expected: AccountKind, found: AccountKind)
-    /// Origen y destino son la misma cuenta: no habría movimiento que registrar.
     case sameAccountOnBothSides(AccountID)
     case currencyMismatch(expected: CurrencyCode, found: CurrencyCode)
-    /// Una cuenta archivada conserva su histórico pero no admite movimientos nuevos.
+    /// An archived account keeps its history but takes no new movements.
     case archivedAccount(AccountID)
-    /// Un saldo inicial de cero no es un saldo inicial: no hay nada que registrar.
     case openingBalanceMustNotBeZero
-    /// No existe la cuenta interna «Saldo inicial». La crea la semilla del primer arranque,
-    /// y sin ella no hay contra qué cuadrar el saldo de partida de una cuenta.
+    /// The internal "Opening balance" account is missing. The first-launch seed creates it,
+    /// and without it there is nothing to balance a starting balance against.
     case missingOpeningBalanceAccount
 }

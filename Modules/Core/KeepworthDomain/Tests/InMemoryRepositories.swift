@@ -2,11 +2,11 @@ import Testing
 
 @testable import KeepworthDomain
 
-/// Dobles en memoria de los protocolos de repositorio.
+/// In-memory doubles of the repository protocols.
 ///
-/// El dominio no conoce ninguna base de datos, así que sus tests tampoco necesitan una.
-/// Estos dobles son también la demostración de que los protocolos son suficientes: si un
-/// caso de uso necesitara algo que no está aquí, el protocolo se queda corto.
+/// The domain knows no database, so its tests need none either. These doubles also prove
+/// the protocols are sufficient: if a use case needed something missing here, the protocol
+/// would be too narrow.
 struct InMemoryInstitutionRepository: InstitutionRepository {
     let institutions: [Institution]
 
@@ -48,7 +48,7 @@ struct InMemoryAccountRepository: AccountRepository {
         accounts.filter { $0.institutionID == id }
     }
 
-    /// Devuelve una copia con una cuenta más, para comprobar qué cambia y qué no al añadirla.
+    /// A copy with one more account, to check what changes and what does not.
     func adding(_ account: Account) -> InMemoryAccountRepository {
         InMemoryAccountRepository(accounts + [account])
     }
@@ -58,8 +58,8 @@ struct InMemoryAccountRepository: AccountRepository {
     }
 }
 
-/// Es un actor porque guarda asientos: `save` muta, y el dominio se compila con concurrencia
-/// estricta.
+/// An actor because it stores entries: `save` mutates, and the domain compiles under
+/// strict concurrency.
 actor InMemoryEntryRepository: EntryRepository {
     private(set) var savedEntries: [Entry]
 

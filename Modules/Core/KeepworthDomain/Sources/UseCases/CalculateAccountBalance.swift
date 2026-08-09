@@ -1,9 +1,8 @@
-/// El saldo de una cuenta a una fecha, en la divisa de esa cuenta.
+/// An account's balance at a date, in that account's currency.
 ///
-/// Es una consulta, no una columna guardada: el saldo es la suma de las líneas vivas de la
-/// cuenta. Guardarlo abriría la puerta a que el saldo y los movimientos dejaran de coincidir.
-///
-/// En una cuenta de gasto o de ingreso esto no es un saldo, sino cuánto ha pasado por ahí.
+/// A query, not a stored column: storing it would let the balance and the movements drift
+/// apart. On an expense or income account this is not a balance but how much went through
+/// it.
 public struct CalculateAccountBalance: Sendable {
     private let accounts: any AccountRepository
     private let entries: any EntryRepository

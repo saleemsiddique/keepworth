@@ -1,22 +1,20 @@
-/// Un sitio donde el dinero entra o del que sale.
+/// A place money moves into or out of.
 ///
-/// Cuentas y categorías comparten tipo a propósito: es lo que hace que registrar un gasto,
-/// un ingreso o un traspaso sea exactamente la misma operación. Lo que las diferencia es
-/// el `kind`, y la UI nunca las mezcla en la misma lista.
+/// Accounts and categories share a type on purpose; only `kind` tells them apart. The UI
+/// never mixes them in the same list.
 public struct Account: Hashable, Sendable, Identifiable {
     public let id: AccountID
-    /// El banco al que pertenece. `nil` en efectivo y en toda categoría.
+    /// `nil` for cash and for every category.
     public let institutionID: InstitutionID?
     public let name: String
     public let kind: AccountKind
     public let currency: CurrencyCode
-    /// Nombre de SF Symbol con el que la UI la representa.
+    /// SF Symbol name.
     public let symbolName: String?
-    /// Cierto solo en «Saldo inicial»: ni se borra ni se renombra, porque es lo que hace
-    /// que los números cuadren.
+    /// True only for "Opening balance": never deleted, never renamed.
     public let isSystem: Bool
-    /// Una cuenta archivada desaparece del editor pero sigue en el histórico. Es lo que se
-    /// hace en vez de borrar cuando ya tiene movimientos, que si no quedarían huérfanos.
+    /// Archived accounts leave the editor but stay in history. This is what happens instead
+    /// of deleting once an account has movements, which would orphan them.
     public let isArchived: Bool
 
     public init(
@@ -46,14 +44,12 @@ public struct Account: Hashable, Sendable, Identifiable {
         self.isArchived = isArchived
     }
 
-    /// Si su saldo forma parte del patrimonio neto.
     public var countsTowardsNetWorth: Bool { kind.countsTowardsNetWorth }
 }
 
 public enum AccountError: Error, Equatable {
-    /// Una cuenta sin nombre no se puede elegir en un selector.
     case blankName
-    /// Se intentó meter una categoría o el saldo inicial dentro de un banco. Un banco agrupa
-    /// sitios donde hay dinero, y una categoría no lo es.
+    /// A category or the opening balance account was put inside a bank. A bank groups
+    /// places holding money, and a category is not one.
     case kindCannotBelongToInstitution(AccountKind)
 }

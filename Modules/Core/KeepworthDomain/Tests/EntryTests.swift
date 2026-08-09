@@ -2,7 +2,7 @@ import Testing
 
 @testable import KeepworthDomain
 
-/// Un gasto de 42,30 € en el súper, tal como lo construye el caso de uso.
+/// €42.30 of groceries, shaped the way the use case builds it.
 private func groceryExpenseLines(
     account: AccountID,
     category: AccountID
@@ -13,7 +13,7 @@ private func groceryExpenseLines(
     ]
 }
 
-@Test("Un asiento cuyas líneas suman cero se acepta")
+@Test("An entry whose lines sum to zero is accepted")
 func acceptsBalancedEntry() throws {
     let lines = groceryExpenseLines(account: AccountID(), category: AccountID())
 
@@ -27,7 +27,7 @@ func acceptsBalancedEntry() throws {
     #expect(entry.payee == "Mercadona")
 }
 
-@Test("Un asiento cuyas líneas no suman cero se rechaza")
+@Test("An entry whose lines do not sum to zero is rejected")
 func rejectsUnbalancedEntry() throws {
     let lines = [
         EntryLine(accountID: AccountID(), amount: Money(minorUnits: -4230, currency: .eur)),
@@ -39,7 +39,7 @@ func rejectsUnbalancedEntry() throws {
     }
 }
 
-@Test("Un asiento de una sola línea se rechaza")
+@Test("A single-line entry is rejected")
 func rejectsSingleLineEntry() throws {
     let lines = [
         EntryLine(accountID: AccountID(), amount: Money.zero(in: .eur))
@@ -50,14 +50,14 @@ func rejectsSingleLineEntry() throws {
     }
 }
 
-@Test("Un asiento sin líneas se rechaza")
+@Test("An entry with no lines is rejected")
 func rejectsEntryWithoutLines() throws {
     #expect(throws: EntryError.needsAtLeastTwoLines(found: 0)) {
         try Entry(occurredOn: CalendarDate(year: 2026, month: 1, day: 31), lines: [])
     }
 }
 
-@Test("Un asiento con divisas base distintas se rechaza")
+@Test("An entry with mixed base currencies is rejected")
 func rejectsMixedBaseCurrencies() throws {
     let lines = [
         EntryLine(accountID: AccountID(), amount: Money(minorUnits: -100, currency: .eur)),
@@ -69,10 +69,10 @@ func rejectsMixedBaseCurrencies() throws {
     }
 }
 
-@Test("Un asiento de tres líneas cuadra si el total en divisa base es cero")
+@Test("A three-line entry balances if its base currency total is zero")
 func acceptsThreeLineEntry() throws {
-    // Venta de 0,5 BTC comprados por 30.000 € y vendidos por 35.000: la ganancia es la
-    // tercera línea, y sin ella el asiento no cuadraría.
+    // Selling 0.5 BTC bought for €30,000 at €35,000: the gain is the third line, and the
+    // entry would not balance without it.
     let lines = [
         EntryLine(
             accountID: AccountID(),
@@ -96,10 +96,10 @@ func acceptsThreeLineEntry() throws {
     #expect(entry.lines.count == 3)
 }
 
-@Test("El asiento cuadra por el importe en divisa base, no por el de la cuenta")
+@Test("An entry balances on the base amount, not on the account amount")
 func balancesByBaseAmountNotAccountAmount() throws {
-    // Las dos líneas mueven cantidades distintas en sus divisas —0,5 BTC contra 30.000 €—
-    // pero el mismo valor en divisa base, que es lo que tiene que cuadrar.
+    // The two lines move different amounts in their own currencies but the same value in
+    // base currency, which is what has to balance.
     let lines = [
         EntryLine(
             accountID: AccountID(),
@@ -118,7 +118,7 @@ func balancesByBaseAmountNotAccountAmount() throws {
     #expect(entry.baseCurrency == .eur)
 }
 
-@Test("Un beneficiario en blanco se guarda como ausente")
+@Test("A blank payee is stored as absent")
 func storesBlankPayeeAsAbsent() throws {
     let lines = groceryExpenseLines(account: AccountID(), category: AccountID())
 

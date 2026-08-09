@@ -1,7 +1,5 @@
-/// Andamiaje del módulo de persistencia.
-///
-/// La configuración de GRDB, las migraciones y las implementaciones de los repositorios
-/// de `KeepworthDomain` llegan en la Fase 2.
+/// Scaffolding. GRDB setup, migrations and the `KeepworthDomain` repository
+/// implementations arrive in Phase 2.
 public enum PersistenceModule {
     public static let name = "KeepworthPersistence"
 }

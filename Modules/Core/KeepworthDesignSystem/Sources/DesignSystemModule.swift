@@ -1,6 +1,5 @@
-/// Andamiaje del design system.
-///
-/// Los seis tokens semánticos, la tipografía y los componentes llegan en la Fase 3.
+/// Scaffolding. The six semantic tokens, the typography and the components arrive in
+/// Phase 3.
 public enum DesignSystemModule {
     public static let name = "KeepworthDesignSystem"
 }

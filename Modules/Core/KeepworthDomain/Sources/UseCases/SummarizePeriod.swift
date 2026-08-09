@@ -1,11 +1,9 @@
-/// Lo ingresado, lo gastado y lo ahorrado entre dos fechas, desglosado por categoría.
+/// What came in, what went out and what was saved between two dates, by category.
 ///
-/// El caso de uso recibe un rango cualquiera. Que la pantalla abra en el mes en curso es una
-/// decisión de la UI, no del dominio: el mismo cálculo sirve para un mes, para unas
-/// vacaciones o para el tramo entre dos nóminas que cayeron raras.
+/// Takes any range. Opening on the current month is a UI decision, not a domain one.
 ///
-/// Los traspasos no aparecen aquí sin necesidad de excluirlos: sus dos patas son cuentas con
-/// dinero, y esto solo mira categorías. El saldo inicial tampoco, porque su contrapartida es
+/// Transfers stay out without being excluded: both their legs are money accounts and this
+/// only looks at categories. Opening balances stay out too, since their counterpart is
 /// `equity`.
 public struct SummarizePeriod: Sendable {
     private let accounts: any AccountRepository
@@ -22,9 +20,8 @@ public struct SummarizePeriod: Sendable {
         in baseCurrency: CurrencyCode
     ) async throws -> PeriodSummary {
         let categories = try await accounts.accounts(ofKinds: [.expense, .income])
-        // `uniquingKeysWith` en vez de `uniqueKeysWithValues`: este último aborta el proceso
-        // si el repositorio devolviera dos cuentas con el mismo identificador, y un dato
-        // corrupto no debe tumbar la app mientras el usuario mira su informe.
+        // `uniquingKeysWith` rather than `uniqueKeysWithValues`, which traps on duplicate
+        // ids: corrupt data must not kill the app while the user reads their report.
         let kindsByAccount = Dictionary(
             categories.map { ($0.id, $0.kind) },
             uniquingKeysWith: { first, _ in first }
@@ -38,8 +35,8 @@ public struct SummarizePeriod: Sendable {
             )
         )
 
-        // Las líneas de gasto son positivas y las de ingreso negativas, porque es de las
-        // categorías de ingreso de donde sale el dinero. El informe las enseña en magnitud.
+        // Expense lines are positive and income lines negative, because income categories
+        // are where the money comes from. The report shows both as magnitudes.
         let expenseLines = lines.filter { kindsByAccount[$0.accountID] == .expense }
         let incomeLines = lines.filter { kindsByAccount[$0.accountID] == .income }
 
@@ -59,12 +56,10 @@ public struct SummarizePeriod: Sendable {
         )
     }
 
-    /// El dinero que entró en cuentas del usuario por haber declarado un saldo de partida.
+    /// Money that entered the user's accounts by declaring a starting balance.
     ///
-    /// No es un ingreso —no lo has cobrado, ya lo tenías— así que no aparece en el informe.
-    /// Pero sí sube el patrimonio, y por eso hay que conocerlo: sin este dato, lo ahorrado y
-    /// la variación del patrimonio no cuadrarían en los periodos en los que se crea una
-    /// cuenta, y esa diferencia parecería un bug en vez de lo que es.
+    /// Not income — you did not earn it — but it does raise net worth. Without this figure
+    /// the report and net worth would disagree in any period where an account is created.
     private func openingBalances(
         from: CalendarDate,
         through: CalendarDate,
@@ -82,8 +77,7 @@ public struct SummarizePeriod: Sendable {
                 through: through
             )
         )
-        // Las líneas de la cuenta de saldo inicial son la contrapartida: salen de ella y
-        // entran en la del usuario, así que lo aportado es su suma con el signo cambiado.
+        // These lines are the counterpart, so what was contributed is their sum negated.
         return try Money.sum(lines.map(\.baseAmount), in: baseCurrency).negated()
     }
 
@@ -98,12 +92,12 @@ public struct SummarizePeriod: Sendable {
             let total = try Money.sum(lines.map(\.baseAmount), in: baseCurrency)
             return AccountTotal(accountID: accountID, total: negated ? try total.negated() : total)
         }
-        // De mayor a menor: en un informe interesa primero dónde se ha ido el dinero.
+        // Largest first: a report is read to find where the money went.
         return totals.sorted { $0.total.minorUnits > $1.total.minorUnits }
     }
 }
 
-/// Cuánto ha pasado por una categoría en el periodo, en magnitud positiva.
+/// How much went through a category in the period, as a positive magnitude.
 public struct AccountTotal: Hashable, Sendable {
     public let accountID: AccountID
     public let total: Money
@@ -114,18 +108,14 @@ public struct AccountTotal: Hashable, Sendable {
     }
 }
 
-/// El informe de un periodo.
+/// A period's report.
 ///
-/// El informe y el patrimonio son dos lecturas de las mismas líneas, así que **no pueden
-/// contradecirse**: `netWorthChange` es exactamente lo que varió el patrimonio entre `from`
-/// y `through`. Esa garantía es la razón de ser de la partida doble, y hay un test que la
-/// demuestra contra `CalculateNetWorth`.
+/// `netWorthChange` is exactly what net worth moved between `from` and `through`, and a
+/// test proves it against `CalculateNetWorth`.
 ///
-/// Lo ahorrado por sí solo **no** basta para esa igualdad. Si en el periodo se declaró el
-/// saldo inicial de una cuenta nueva, el patrimonio sube sin que hayas ingresado nada: ese
-/// dinero ya era tuyo. Por eso el informe lo lleva aparte en `openingBalances`, en lugar de
-/// mezclarlo con los ingresos —lo que inflaría lo que crees haber cobrado este mes— o de
-/// ignorarlo y dejar que las dos cifras discrepen sin explicación.
+/// `saved` alone is not enough for that equality: declaring a new account's starting
+/// balance raises net worth without being income, so it is kept apart in `openingBalances`
+/// rather than inflating what the user thinks they earned this month.
 public struct PeriodSummary: Hashable, Sendable {
     public let from: CalendarDate
     public let through: CalendarDate
@@ -134,16 +124,16 @@ public struct PeriodSummary: Hashable, Sendable {
     public let baseCurrency: CurrencyCode
     public let totalIncome: Money
     public let totalExpenses: Money
-    /// Lo ingresado menos lo gastado. Negativo si se gastó más de lo que entró.
+    /// Income minus expenses. Negative if more went out than came in.
     public let saved: Money
-    /// Saldos de partida declarados en el periodo. Cero en un periodo normal.
+    /// Starting balances declared in the period. Zero in a normal one.
     public let openingBalances: Money
-    /// Lo que varió el patrimonio en el periodo: lo ahorrado más los saldos de partida.
+    /// What net worth moved in the period: `saved` plus `openingBalances`.
     public let netWorthChange: Money
 
-    /// Los totales se calculan aquí, una vez, en lugar de ser propiedades que lanzan. Una
-    /// vista de SwiftUI no puede hacer `try` en su cuerpo, y obligarla a un `try?` por cada
-    /// cifra convertiría un error de datos en un hueco en blanco sin explicación.
+    /// Totals are computed once here instead of being throwing properties: a SwiftUI view
+    /// cannot `try` in its body, and a `try?` per figure would turn a data error into a
+    /// blank space.
     public init(
         from: CalendarDate,
         through: CalendarDate,

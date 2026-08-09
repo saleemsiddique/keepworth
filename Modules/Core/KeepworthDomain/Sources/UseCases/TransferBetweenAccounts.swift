@@ -1,12 +1,10 @@
-/// Mueve dinero entre dos cuentas del usuario.
+/// Moves money between two of the user's accounts.
 ///
-/// No aparece en el informe del mes sin necesidad de excluirlo: sus dos patas son cuentas
-/// con dinero, y el informe solo mira categorías. Y el patrimonio no se mueve, porque lo que
-/// sale de un lado entra en el otro.
+/// It stays out of the period report without needing to be excluded: both legs are money
+/// accounts and the report only looks at categories. Net worth does not move either.
 ///
-/// Un traspaso entre bancos tarda días en llegar, pero no se modela con una cuenta puente:
-/// se aplica entero según su fecha. Modelarlo obligaría a un paso más en cada traspaso a
-/// cambio de un matiz que la fecha ya resuelve.
+/// A transfer between banks takes days to land, but there is no bridge account: it applies
+/// whole on its date, which is a detail the date already settles.
 public struct TransferBetweenAccounts: Sendable {
     private let accounts: any AccountRepository
     private let entries: any EntryRepository
@@ -19,7 +17,7 @@ public struct TransferBetweenAccounts: Sendable {
     public struct Request: Hashable, Sendable {
         public let sourceAccountID: AccountID
         public let destinationAccountID: AccountID
-        /// Cuánto se traspasa, en positivo.
+        /// How much is transferred, positive.
         public let amount: Money
         public let occurredOn: CalendarDate
         public let note: String?

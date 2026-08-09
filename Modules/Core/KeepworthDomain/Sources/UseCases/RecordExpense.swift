@@ -1,8 +1,7 @@
-/// Registra un gasto: el dinero sale de una cuenta y se imputa a una categoría de gasto.
+/// Records an expense: money leaves an account and is charged to an expense category.
 ///
-/// El usuario introduce «42,30 en Supermercado desde BBVA» y esto lo traduce en el asiento
-/// de dos líneas que hace que el patrimonio y el informe del mes no puedan contradecirse.
-/// La UI nunca compone líneas a mano.
+/// The user enters "42.30 on Groceries from BBVA" and this turns it into the two-line
+/// entry. The UI never composes lines by hand.
 public struct RecordExpense: Sendable {
     private let accounts: any AccountRepository
     private let entries: any EntryRepository
@@ -15,7 +14,7 @@ public struct RecordExpense: Sendable {
     public struct Request: Hashable, Sendable {
         public let accountID: AccountID
         public let categoryID: AccountID
-        /// Cuánto se gastó, en positivo.
+        /// How much was spent, positive.
         public let amount: Money
         public let occurredOn: CalendarDate
         public let payee: String?

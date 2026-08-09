@@ -1,8 +1,6 @@
 extension String {
-    /// El texto sin espacios ni saltos de línea alrededor.
-    ///
-    /// Las entidades normalizan así todo texto que reciben: «BBVA » y «BBVA» son el mismo
-    /// banco, y guardarlos distintos deja dos filas donde el usuario ve una.
+    /// "BBVA " and "BBVA" are the same bank; storing both leaves two rows where the user
+    /// sees one.
     var trimmedForStorage: String {
         String(
             drop(while: \.isWhitespace)
@@ -12,10 +10,8 @@ extension String {
         )
     }
 
-    /// El texto normalizado, o `nil` si al normalizarlo no queda nada.
-    ///
-    /// Un beneficiario vacío no es un beneficiario: se guarda como ausente, no como cadena
-    /// vacía, para que la UI no tenga que distinguir entre dos formas de «no hay nada».
+    /// `nil` when nothing is left, so the UI never has to tell an empty string from an
+    /// absent value.
     var trimmedForStorageOrNil: String? {
         let trimmed = trimmedForStorage
         return trimmed.isEmpty ? nil : trimmed

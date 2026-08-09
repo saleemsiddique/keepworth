@@ -1,21 +1,16 @@
-/// Una pata de un asiento: cuánto se movió y en qué cuenta.
+/// One leg of an entry: how much moved, and in which account.
 ///
-/// Lleva dos importes porque son dos datos distintos, no dos vistas del mismo:
-/// `amount` es lo que se movió en la divisa de la cuenta, y `baseAmount` lo que valió en
-/// la divisa del usuario. En v1 coinciden.
-///
-/// `baseAmount` **se guarda, no se calcula**. Multiplicar `amount` por un tipo de cambio
-/// deja restos de redondeo —con 1 USD = 0,923456 €, una compra de 123,45 USD descuadra en
-/// algo más de un céntimo— y con ellos el invariante de suma cero es inalcanzable. El valor
-/// en divisa base es el importe que el banco cobró de verdad, y ése es exacto.
+/// Two amounts because they are two facts, not two views of one. `baseAmount` is **stored,
+/// never derived**: multiplying `amount` by a rate leaves rounding dust that makes the
+/// zero-sum invariant unreachable.
 public struct EntryLine: Hashable, Sendable, Identifiable {
     public let id: EntryLineID
     public let accountID: AccountID
-    /// Lo que se movió, en la divisa de la cuenta. Negativo si sale, positivo si entra.
+    /// What moved, in the account's currency. Negative out, positive in.
     public let amount: Money
-    /// Lo que valió en la divisa base del usuario, con el mismo signo.
+    /// What it was worth in the user's currency, same sign.
     public let baseAmount: Money
-    /// Con tres o más líneas deja de deducirse cuál es el origen, así que se guarda.
+    /// With three or more lines the origin stops being deducible, so it is stored.
     public let sortOrder: Int
 
     public init(
@@ -32,7 +27,7 @@ public struct EntryLine: Hashable, Sendable, Identifiable {
         self.sortOrder = sortOrder
     }
 
-    /// Atajo para el caso monodivisa, donde el importe en divisa base es el mismo.
+    /// Single-currency shorthand, where both amounts are the same.
     public init(
         id: EntryLineID = EntryLineID(),
         accountID: AccountID,

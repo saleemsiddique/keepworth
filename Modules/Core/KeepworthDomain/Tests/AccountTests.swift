@@ -2,7 +2,7 @@ import Testing
 
 @testable import KeepworthDomain
 
-@Test("Una cuenta de activo puede pertenecer a un banco")
+@Test("An asset account can belong to a bank")
 func allowsAssetInsideInstitution() throws {
     let bbva = try Institution(name: "BBVA")
 
@@ -16,7 +16,7 @@ func allowsAssetInsideInstitution() throws {
     #expect(account.institutionID == bbva.id)
 }
 
-@Test("Una tarjeta de crédito puede pertenecer a un banco")
+@Test("A credit card can belong to a bank")
 func allowsLiabilityInsideInstitution() throws {
     let bbva = try Institution(name: "BBVA")
 
@@ -26,7 +26,7 @@ func allowsLiabilityInsideInstitution() throws {
 }
 
 @Test(
-    "Una categoría o el saldo inicial dentro de un banco se rechaza",
+    "A category or the opening balance inside a bank is rejected",
     arguments: [AccountKind.expense, .income, .equity]
 )
 func rejectsNonMonetaryKindInsideInstitution(kind: AccountKind) throws {
@@ -37,19 +37,19 @@ func rejectsNonMonetaryKindInsideInstitution(kind: AccountKind) throws {
     }
 }
 
-@Test("Una cuenta sin nombre se rechaza", arguments: ["", "   ", "\n"])
+@Test("An account with a blank name is rejected", arguments: ["", "   ", "\n"])
 func rejectsBlankName(name: String) {
     #expect(throws: AccountError.blankName) {
         try Account(name: name, kind: .asset, currency: .eur)
     }
 }
 
-@Test("El nombre se guarda sin espacios alrededor")
+@Test("A name is stored without surrounding whitespace")
 func trimsName() throws {
     #expect(try Account(name: "  Efectivo  ", kind: .asset, currency: .eur).name == "Efectivo")
 }
 
-@Test("Solo el activo y el pasivo cuentan para el patrimonio")
+@Test("Only assets and liabilities count towards net worth")
 func onlyAssetAndLiabilityCountTowardsNetWorth() {
     #expect(AccountKind.asset.countsTowardsNetWorth)
     #expect(AccountKind.liability.countsTowardsNetWorth)
@@ -58,7 +58,7 @@ func onlyAssetAndLiabilityCountTowardsNetWorth() {
     #expect(!AccountKind.equity.countsTowardsNetWorth)
 }
 
-@Test("Un banco sin nombre se rechaza")
+@Test("A bank with a blank name is rejected")
 func rejectsBlankInstitutionName() {
     #expect(throws: InstitutionError.blankName) {
         try Institution(name: "  ")

@@ -1,10 +1,10 @@
-/// El patrimonio neto a una fecha: lo que tienes menos lo que debes.
+/// Net worth at a date: what you own minus what you owe.
 ///
-/// **Solo suma cuentas de activo y de pasivo.** Que una categoría entrara aquí es el bug más
-/// grave posible de la app: le diría al usuario que tiene dinero que no tiene.
+/// **Asset and liability accounts only.** A category reaching this sum would tell the user
+/// they have money they do not have.
 ///
-/// El filtro de fecha no es opcional. Un movimiento fechado en el futuro es una previsión:
-/// hasta que llega su día, el dinero sigue donde estaba.
+/// The date filter is not optional: a future-dated movement is a forecast, and until its
+/// day arrives the money is still where it was.
 public struct CalculateNetWorth: Sendable {
     private let accounts: any AccountRepository
     private let entries: any EntryRepository
@@ -15,8 +15,8 @@ public struct CalculateNetWorth: Sendable {
     }
 
     /// - Parameters:
-    ///   - date: último día que cuenta. Lo posterior no ha ocurrido todavía.
-    ///   - baseCurrency: la divisa del usuario, en la que cuadran todos los asientos.
+    ///   - date: last day that counts. Anything after has not happened yet.
+    ///   - baseCurrency: the user's currency, the one every entry balances in.
     public func execute(
         asOf date: CalendarDate, in baseCurrency: CurrencyCode
     ) async throws -> Money {

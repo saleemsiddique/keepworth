@@ -1,12 +1,8 @@
-/// Una fecha del calendario sin hora ni zona horaria: «31 de enero de 2026» y nada más.
+/// A calendar date with no time and no time zone: "31 January 2026" and nothing else.
 ///
-/// No es un instante. Un movimiento registrado el 31 de enero sigue siendo del 31 de enero
-/// se mire desde donde se mire, así que nunca cambia de mes en el informe ni discrepa entre
-/// dos dispositivos sincronizados. Un `Date` sí cambiaría: es un punto en el tiempo, y el día
-/// que representa depende de la zona con la que se lea.
-///
-/// La zona horaria interviene en un único sitio: al calcular qué día es **hoy** para fechar
-/// un movimiento nuevo, lo que ocurre en la UI. A partir de ahí el dato queda congelado.
+/// Not an instant. A `Date` stands for a different day depending on the zone reading it,
+/// so the same expense would land in a different month and two synced devices would show
+/// different reports. The time zone only comes in when the UI decides what day today is.
 public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConvertible {
     public let year: Int
     public let month: Int
@@ -27,7 +23,6 @@ public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConverti
         self.day = day
     }
 
-    /// Lee una fecha en formato ISO 8601 `yyyy-MM-dd`, que es como se guarda en la base de datos.
     public init(iso8601 text: String) throws {
         let parts = text.split(separator: "-", omittingEmptySubsequences: false)
         guard parts.count == 3,
@@ -39,8 +34,8 @@ public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConverti
         try self.init(year: year, month: month, day: day)
     }
 
-    /// Forma ISO 8601 `yyyy-MM-dd`. Coincide con la columna `TEXT` del esquema, y ordenarla
-    /// como cadena da el mismo resultado que ordenarla como fecha.
+    /// ISO 8601 `yyyy-MM-dd`: the schema's `TEXT` column, and sorting it as a string gives
+    /// the same order as sorting it as a date.
     public var description: String {
         "\(Self.padded(year, toWidth: 4))-\(Self.padded(month, toWidth: 2))-\(Self.padded(day, toWidth: 2))"
     }
@@ -58,7 +53,7 @@ public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConverti
         }
     }
 
-    /// Regla gregoriana completa: 2000 fue bisiesto y 1900 no lo fue.
+    /// Full Gregorian rule: 2000 was a leap year, 1900 was not.
     static func isLeapYear(_ year: Int) -> Bool {
         if year % 400 == 0 { return true }
         if year % 100 == 0 { return false }
@@ -75,6 +70,5 @@ public enum CalendarDateError: Error, Equatable {
     case yearOutOfRange(Int)
     case monthOutOfRange(Int)
     case dayOutOfRange(Int, month: Int, year: Int)
-    /// El texto no tiene la forma `yyyy-MM-dd`.
     case malformedText(String)
 }

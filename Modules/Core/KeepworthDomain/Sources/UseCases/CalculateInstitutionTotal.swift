@@ -1,7 +1,7 @@
-/// Lo que tienes en un banco: la suma de sus cuentas en divisa base.
+/// What you hold at a bank: the sum of its accounts in base currency.
 ///
-/// Un banco no guarda dinero ni recibe movimientos; solo agrupa cuentas. Este total existe
-/// porque con seis o siete cuentas una lista plana deja de servir.
+/// A bank holds no money and receives no movements; it only groups accounts. This total
+/// exists because a flat list stops working past six or seven accounts.
 public struct CalculateInstitutionTotal: Sendable {
     private let institutions: any InstitutionRepository
     private let accounts: any AccountRepository
@@ -22,8 +22,8 @@ public struct CalculateInstitutionTotal: Sendable {
         asOf date: CalendarDate,
         in baseCurrency: CurrencyCode
     ) async throws -> Money {
-        // Se pide el banco aunque no se use su nombre: si no existe, el total sería cero y
-        // el usuario no sabría distinguirlo de un banco vacío.
+        // Fetched even though the name is unused: without this, a missing bank would total
+        // zero and look no different from an empty one.
         _ = try await institutions.institution(withID: institutionID)
 
         let institutionAccounts = try await accounts.accounts(inInstitution: institutionID)

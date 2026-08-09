@@ -1,13 +1,12 @@
 import Foundation
 
-/// Identificador tipado de una entidad.
+/// A typed entity identifier.
 ///
-/// El parámetro genérico no se almacena: existe para que el compilador impida pasar el
-/// identificador de una cuenta donde se espera el de un asiento, que es un fallo que sin
-/// tipos no aparece hasta que los datos ya están mal.
+/// The generic parameter is never stored: it exists so the compiler rejects passing an
+/// account id where an entry id is expected.
 ///
-/// Son UUID y **nunca autoincrementales**: dos dispositivos sin conexión que crearan la
-/// fila número 7 a la vez romperían el sync con CloudKit de forma irreparable.
+/// UUIDs, never autoincrementing: two offline devices both creating row 7 would break
+/// CloudKit sync beyond repair.
 public struct Identifier<Subject>: Hashable, Sendable, CustomStringConvertible {
     public let rawValue: UUID
 

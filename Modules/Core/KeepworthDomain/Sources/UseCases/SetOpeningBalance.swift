@@ -1,15 +1,11 @@
-/// Da a una cuenta el saldo que ya tenía cuando el usuario empezó a usar la app.
+/// Gives an account the balance it already had when the user started using the app.
 ///
-/// La pantalla de crear cuenta lo pide siempre: si no, el patrimonio está mal desde el primer
-/// minuto y el usuario no sabe por qué.
+/// Its counterpart is the internal `equity` account, not an income category, which is what
+/// keeps a starting balance out of the period report: you did not earn €20,000, you already
+/// had it.
 ///
-/// Su contrapartida es la cuenta interna `equity` («Saldo inicial»), no una categoría de
-/// ingreso. Es lo que hace que el saldo inicial **no contamine el informe del periodo**: no
-/// has ingresado 20.000 €, es dinero que ya tenías.
-///
-/// Admite saldo negativo, que es el caso normal de una tarjeta de crédito con deuda o de una
-/// cuenta en números rojos. Por eso no reutiliza la validación de importe positivo de los
-/// movimientos: aquí el signo lo elige el usuario, no la contabilidad.
+/// Accepts a negative balance — the normal case for a credit card carrying debt — so it
+/// does not reuse the positive-amount rule the other movements share.
 public struct SetOpeningBalance: Sendable {
     private let accounts: any AccountRepository
     private let entries: any EntryRepository
@@ -21,7 +17,7 @@ public struct SetOpeningBalance: Sendable {
 
     public struct Request: Hashable, Sendable {
         public let accountID: AccountID
-        /// El saldo que la cuenta ya tenía. Negativo si es una deuda.
+        /// The balance the account already had. Negative if it is a debt.
         public let balance: Money
         public let occurredOn: CalendarDate
 
@@ -51,8 +47,8 @@ public struct SetOpeningBalance: Sendable {
             throw MovementError.openingBalanceMustNotBeZero
         }
 
-        // Un saldo positivo entra en la cuenta; uno negativo sale de ella. En ambos casos la
-        // contrapartida es la cuenta de saldo inicial, y el asiento cuadra igual.
+        // A positive balance flows into the account, a negative one out of it. Either way
+        // the counterpart is the opening balance account and the entry balances.
         let entry =
             request.balance.isPositive
             ? try Entry.twoLine(

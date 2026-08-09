@@ -1,8 +1,8 @@
-/// Registra un ingreso: el dinero sale de una categoría de ingreso y entra en una cuenta.
+/// Records income: money leaves an income category and enters an account.
 ///
-/// Es la misma operación que un gasto con las cuentas en el otro orden. Que la categoría
-/// esté del lado del que sale el dinero no es un truco contable: es lo que hace que el
-/// «saldo» de una categoría de ingreso sea cuánto has cobrado por ahí.
+/// Same operation as an expense with the accounts swapped. The category sitting on the
+/// outgoing side is what makes an income category's "balance" mean how much you earned
+/// through it.
 public struct RecordIncome: Sendable {
     private let accounts: any AccountRepository
     private let entries: any EntryRepository
@@ -15,7 +15,7 @@ public struct RecordIncome: Sendable {
     public struct Request: Hashable, Sendable {
         public let accountID: AccountID
         public let categoryID: AccountID
-        /// Cuánto se ingresó, en positivo.
+        /// How much came in, positive.
         public let amount: Money
         public let occurredOn: CalendarDate
         public let payee: String?
