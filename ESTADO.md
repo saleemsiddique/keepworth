@@ -4,7 +4,7 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-04 — **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-08 — **Fase 1 (Dominio) completada**: 70 tests en verde, lint limpio y revisor sin hallazgos; ver sección 6 bis. Antes, el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
 ---
 
@@ -29,7 +29,9 @@ https://claude.ai/code/artifact/fc6c746d-92e4-408e-bc33-32786328d709
 
 La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila sin un solo warning, los cinco tests placeholder pasan, el lint de formato sale limpio y **el CI está en verde**. Lo que falló y se corrigió está en la sección 3.
 
-**La siguiente fase por empezar es la 1 (Dominio).** Nada de ella está escrito.
+La **Fase 1 (Dominio) está completada** (2026-08-08): 70 tests en verde, lint limpio y el revisor de arquitectura sin hallazgos. Cómo quedó y por qué está en la sección 6 bis.
+
+**La siguiente fase por empezar es la 2 (Persistencia).** Nada de ella está escrito.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -51,14 +53,14 @@ mise.toml                                    versiones de tuist y xcbeautify
 Apps/Keepworth/Sources/KeepworthApp.swift    @main
 Apps/Keepworth/Keepworth.entitlements        App Group + CloudKit
 
-Modules/Core/KeepworthDomain/                CLAUDE.md + placeholder + test
+Modules/Core/KeepworthDomain/                CLAUDE.md + la capa completa (Fase 1)
 Modules/Core/KeepworthPersistence/           CLAUDE.md + placeholder + test
 Modules/Core/KeepworthSync/                  CLAUDE.md + placeholder + test
 Modules/Core/KeepworthDesignSystem/          CLAUDE.md + placeholder + test
 Modules/KeepworthAppCore/                    CLAUDE.md + RootView + test
 ```
 
-Los archivos `*Module.swift` de cada módulo Core son **andamiaje deliberado**: existen solo para que el target enlace y sea testeable desde la Fase 0. Se eliminan cuando el módulo tenga contenido real.
+Los archivos `*Module.swift` que quedan en Persistence, Sync y DesignSystem son **andamiaje deliberado**: existen solo para que el target enlace y sea testeable. Cada uno se elimina cuando su módulo tenga contenido real, como ya se hizo con el del dominio.
 
 ### Lo que no existe todavía
 
@@ -381,6 +383,8 @@ Son consultas, no columnas almacenadas:
 
 El informe mensual y el patrimonio son dos vistas de los mismos datos, así que **no pueden contradecirse**: si en enero ingresaste 2.100 y gastaste 877,30, tu patrimonio subió 1.222,70 exactos. Esa garantía es la razón de ser de la partida doble, y una lista plana de movimientos no la da.
 
+Con un matiz que el dominio hace explícito en vez de esconder: **si dentro del periodo se declara el saldo inicial de una cuenta nueva, el patrimonio sube sin que hayas ingresado nada** — ese dinero ya era tuyo. La igualdad completa es `variación del patrimonio = ahorrado + saldos de partida del periodo`, y `PeriodSummary` lleva los tres números para que la relación sea comprobable y no una salvedad escrita en un documento.
+
 Los traspasos no aparecen en el informe sin necesidad de excluirlos: sus dos patas son cuentas de dinero, y el informe solo mira `expense` e `income`.
 
 El saldo inicial de una cuenta tampoco contamina el informe: su contrapartida es `equity`, no `income`.
@@ -422,6 +426,50 @@ Decisiones ya tomadas que **no** se implementan ahora, anotadas para que nadie l
 - **Movimientos programados**: tabla de plantillas aparte. Un movimiento programado **no toca el patrimonio hasta que llega su fecha**; hasta entonces es una previsión, no contabilidad.
 - **Metadatos de CloudKit**: `CKSyncEngine` necesita conservar los *system fields* de cada `CKRecord`. Irán en una tabla `sync_metadata` aparte, no en columnas de las tablas de datos, para que el modelo de dominio no cargue con detalles de transporte.
 - **Carteras de inversión**: en v1 son cuentas `asset` cuyo valor actualiza el usuario a mano, con la subida o bajada registrada contra una categoría de ingreso. La valoración automática necesita el backend.
+
+---
+
+## 6 bis. Cómo quedó el dominio (Fase 1)
+
+Lo que el esquema de la sección 6 describe en SQL, aquí está en tipos. Estas decisiones se tomaron al escribir la capa y no se revisan sin hablarlo.
+
+### `CalendarDate` en vez de `Date`
+
+`occurredOn` es una **fecha sin hora ni zona**: año, mes y día, y nada más.
+
+Un `Date` es un instante, y el día que representa depende de dónde se lea. Un gasto registrado en Madrid el 1 de febrero a las 00:30 es el 31 de enero visto desde México: el mismo movimiento caería en un mes o en otro según el huso, y **dos dispositivos sincronizados enseñarían informes mensuales distintos con los mismos datos**. Eso es exactamente la contradicción que la partida doble existe para hacer imposible.
+
+Hay un segundo motivo: normalizar un `Date` a medianoche se rompe en los cambios de horario, porque hay días en los que las 00:00 no existen en algunas zonas. Sin horas no hay medianoche que perder.
+
+La zona horaria interviene en un único sitio: al calcular **qué día es hoy** para fechar un movimiento nuevo, lo que ocurre en la UI. A partir de ahí el dato queda congelado y no se reinterpreta jamás.
+
+Su forma textual es `yyyy-MM-dd`, la misma de la columna `TEXT` del esquema, y ordenarla como cadena da el mismo orden que como fecha.
+
+### «Hoy» es un parámetro, no un reloj
+
+`CalculateNetWorth.execute(asOf:in:)` recibe la fecha de corte. Sin protocolo de reloj ni inyección: los tests son deterministas por construcción y sale gratis el «patrimonio a fecha X» que harán falta las gráficas.
+
+### Divisa
+
+`CurrencyCode` existe desde el día uno aunque la v1 sea monodivisa: es lo que permite abrir multi-divisa sin migrar datos. El usuario elige una y todas sus cuentas la comparten — **no es «solo euros»**.
+
+El exponente es **2 para todas las divisas en v1**, y vive en un único sitio: `CurrencyCode.minorUnitExponent`. El yen tiene 0 y el bitcóin 8, así que al abrir multi-divisa ése es el único punto del dominio que hay que tocar.
+
+### Otras decisiones
+
+- **Identificadores tipados**: `AccountID`, `EntryID`, `InstitutionID`, `EntryLineID` son `Identifier<T>` sobre `UUID`. El compilador impide pasar el identificador de una cuenta donde se espera el de un asiento.
+- **Los repositorios lanzan, no devuelven `nil`.** Una cuenta que no existe es un error del que llama, no un caso normal que cada llamador tenga que defender con un `guard let`.
+- **Una sola consulta de líneas.** `EntryLineQuery(accountIDs:from:through:)` en vez de un método por combinación: el patrimonio pide unas cuentas hasta una fecha y el informe un rango, pero es la misma pregunta. Las cuentas son **obligatorias**: no existe «todas», porque ninguna pregunta del dominio lo necesita y una consulta sin filtro sobre un historial largo es la que no queremos que nadie escriba por descuido.
+- **El informe lleva los saldos de partida aparte.** `PeriodSummary` expone `saved`, `openingBalances` y `netWorthChange`. Sin el segundo, el informe y el patrimonio discreparían justo el mes en que el usuario crea una cuenta, y parecería un bug.
+- **El saldo inicial admite signo negativo**, que es el caso normal de una tarjeta con deuda. Por eso `SetOpeningBalance` no reutiliza la validación de importe positivo de los movimientos.
+- **La suma la hace el dominio, no SQL.** La capa que garantiza los invariantes es la que cuenta el dinero. Si con muchos movimientos esto se nota, se optimiza en la Fase 2 con una consulta agregada — pero entonces habrá que demostrar que sigue dando lo mismo.
+- **`Entry.twoLine`** construye los tres movimientos del usuario. Gasto, ingreso y traspaso son literalmente la misma llamada con las cuentas en distinto orden.
+- **Los importes se introducen en positivo.** El signo lo pone la contabilidad según de qué lado esté cada cuenta, no el usuario.
+- **Una cuenta archivada no admite movimientos nuevos**, pero conserva su histórico.
+
+### Un aviso para la Fase 2
+
+`Account.init` es quien garantiza que una categoría nunca tenga banco, y lanza si se incumple. **Si la implementación GRDB decodifica `Account` con `FetchableRecord` por un camino que no pase por ese init, el invariante deja de estar garantizado en lectura.** Lo señaló el revisor de arquitectura al auditar la Fase 1. La decodificación tiene que pasar por el inicializador que valida, o el invariante es solo una promesa.
 
 ---
 
@@ -556,13 +604,23 @@ Cada fase termina compilando, con sus tests en verde y en CI. No se empieza una 
 
 Proyecto generado, build en verde, los cinco tests placeholder pasando, lint limpio y los tres criterios del entorno de IA comprobados. Lo que falló durante la verificación y cómo se corrigió está en la sección 3.
 
-### Fase 1 — Dominio
+### Fase 1 — Dominio — **completada (2026-08-08)**
 
-`Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine` y las reglas de balance. Protocolos `InstitutionRepository`, `AccountRepository` y `EntryRepository`. Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
+`Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine` y las reglas de balance. Protocolos `InstitutionRepository`, `AccountRepository` y `EntryRepository`. Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
 
-Cero dependencias externas, cobertura alta: es la capa donde los invariantes contables se demuestran. Aquí un bug es dinero mal contado.
+70 tests en verde, lint limpio y el revisor de arquitectura sin hallazgos. `DomainModule.swift` eliminado. El único `import` de toda la capa es `Foundation` en `Identifier.swift`, y está solo por `UUID`.
 
-Eliminar `DomainModule.swift` al empezar.
+`SetOpeningBalance` no estaba en el plan original y se añadió al revisar: sin él no había forma de dar de alta una cuenta con su saldo de partida sin componer líneas a mano desde la UI, que es justo lo que el contrato del módulo prohíbe.
+
+**Decisiones tomadas al escribirla** (ver sección 6 bis):
+
+- `CalendarDate` propio para `occurredOn`, en vez de `Date`.
+- La fecha de corte del patrimonio es un **parámetro `asOf`**, no un reloj inyectado.
+- `CurrencyCode` existe desde el día uno; el exponente es 2 para todas las divisas en v1.
+- Identificadores tipados (`AccountID`, `EntryID`…) sobre `UUID`.
+- Los repositorios son `async throws` y **lanzan** cuando algo no existe, en vez de devolver `nil`.
+- Una sola consulta de líneas (`EntryLineQuery`) en lugar de un método por combinación.
+- La suma la hace el dominio en Swift, no SQL: la capa que garantiza los invariantes es la que cuenta el dinero.
 
 ### Fase 2 — Persistencia
 
@@ -635,7 +693,7 @@ xcrun swift-format lint --configuration .swift-format --recursive --strict Modul
 Criterios de aceptación por fase:
 
 - **Entorno de IA** — editar un `.swift` deja el archivo formateado sin intervención; tocar `Project.swift` regenera el proyecto; el agente revisor detecta un `import GRDB` introducido a propósito dentro de una feature.
-- **Dominio** — un asiento cuyas líneas no suman cero es rechazado con error; un asiento de una sola línea es rechazado; sumar `Money` de divisas distintas falla en vez de aproximar; una cuenta de gasto o ingreso con banco es rechazada; el patrimonio neto es correcto mezclando activo y pasivo, y **no varía** al crear, renombrar o archivar una categoría; el informe del mes y la variación del patrimonio en ese mes coinciden al céntimo.
+- **Dominio** — un asiento cuyas líneas no suman cero es rechazado con error; un asiento de una sola línea es rechazado; sumar `Money` de divisas distintas falla en vez de aproximar; una cuenta de gasto o ingreso con banco es rechazada; el patrimonio neto es correcto mezclando activo y pasivo, y **no varía** al crear, renombrar o archivar una categoría; el `netWorthChange` del informe coincide al céntimo con la variación del patrimonio en el periodo, **también cuando dentro de él se declara el saldo inicial de una cuenta nueva**.
 - **Persistencia** — crear, editar y borrar cuentas y movimientos sobre base de datos en memoria; el borrado marca `deleted_at` y la fila deja de aparecer en las consultas; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas.
 - **UI** — galería de previews revisada en tema claro y oscuro; recorrido manual en simulador de crear cuenta → registrar gasto → verlo en Resumen y en Movimientos → editarlo → borrarlo, con el patrimonio actualizándose en cada paso.
 - **Import/Export** — exportar, borrar la base de datos, reimportar, y comprobar que el patrimonio y el número de movimientos coinciden exactamente.
