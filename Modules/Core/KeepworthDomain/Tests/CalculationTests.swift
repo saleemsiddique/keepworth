@@ -77,23 +77,20 @@ func netWorthIgnoresCategoryChanges() async throws {
     let before = try await CalculateNetWorth(accounts: ledger.accounts, entries: entries)
         .execute(asOf: asOf, in: .eur)
 
-    let withNewCategory = ledger.accounts.adding(
-        try Account(name: "Restaurantes", kind: .expense, currency: .eur)
+    try await ledger.accounts.save(
+        Account(name: "Restaurantes", kind: .expense, currency: .eur)
     )
-    let withRenamedCategory = withNewCategory.replacing(
-        try Account(
+    try await ledger.accounts.save(
+        Account(
             id: ledger.groceries.id,
             name: "Compra semanal",
             kind: .expense,
             currency: .eur
         )
     )
-    let withArchivedCategory = withRenamedCategory.replacing(
-        try Account(
-            id: ledger.rent.id, name: "Vivienda", kind: .expense, currency: .eur, isArchived: true)
-    )
+    try await ledger.accounts.archive(ledger.rent.id)
 
-    let after = try await CalculateNetWorth(accounts: withArchivedCategory, entries: entries)
+    let after = try await CalculateNetWorth(accounts: ledger.accounts, entries: entries)
         .execute(asOf: asOf, in: .eur)
 
     #expect(before == euros(195_770))

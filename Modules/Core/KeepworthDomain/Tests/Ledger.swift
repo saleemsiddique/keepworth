@@ -13,6 +13,9 @@ struct Ledger {
     /// The internal account starting balances balance against. The first-launch seed
     /// creates it in the real app.
     let openingBalance: Account
+    /// One instance per ledger, not a fresh one per call: tests write to it now.
+    let accounts: InMemoryAccountRepository
+    let institutions: InMemoryInstitutionRepository
 
     init() throws {
         bbva = try Institution(name: "BBVA")
@@ -38,16 +41,10 @@ struct Ledger {
             currency: .eur,
             isSystem: true
         )
-    }
-
-    var accounts: InMemoryAccountRepository {
-        InMemoryAccountRepository([
+        accounts = InMemoryAccountRepository([
             checking, creditCard, cash, groceries, rent, salary, openingBalance,
         ])
-    }
-
-    var institutions: InMemoryInstitutionRepository {
-        InMemoryInstitutionRepository([bbva])
+        institutions = InMemoryInstitutionRepository([bbva])
     }
 }
 
