@@ -5,12 +5,27 @@ public protocol InstitutionRepository: Sendable {
     /// case every caller has to guard against.
     func institution(withID id: InstitutionID) async throws -> Institution
     func allInstitutions() async throws -> [Institution]
+    /// Inserts it, or updates the stored one with the same id.
+    func save(_ institution: Institution) async throws
 }
 
 public protocol AccountRepository: Sendable {
     func account(withID id: AccountID) async throws -> Account
     func accounts(ofKinds kinds: Set<AccountKind>) async throws -> [Account]
     func accounts(inInstitution id: InstitutionID) async throws -> [Account]
+    /// Inserts it, or updates the stored one with the same id.
+    func save(_ account: Account) async throws
+    /// Archiving is what happens instead of deleting once an account has movements:
+    /// it leaves the editor but keeps its history.
+    func archive(_ id: AccountID) async throws
+}
+
+/// Preferences that follow the user across devices. Small and few, so one typed accessor
+/// per setting rather than a generic key-value bag.
+public protocol SettingsRepository: Sendable {
+    /// The currency every account shares. `nil` until the user picks one on first launch.
+    func baseCurrency() async throws -> CurrencyCode?
+    func setBaseCurrency(_ currency: CurrencyCode) async throws
 }
 
 public protocol EntryRepository: Sendable {

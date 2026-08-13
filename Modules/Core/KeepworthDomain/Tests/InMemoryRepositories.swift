@@ -7,8 +7,10 @@ import Testing
 /// The domain knows no database, so its tests need none either. These doubles also prove
 /// the protocols are sufficient: if a use case needed something missing here, the protocol
 /// would be too narrow.
-struct InMemoryInstitutionRepository: InstitutionRepository {
-    let institutions: [Institution]
+///
+/// Actors because they now store writes, and the domain compiles under strict concurrency.
+actor InMemoryInstitutionRepository: InstitutionRepository {
+    private(set) var institutions: [Institution]
 
     init(_ institutions: [Institution] = []) {
         self.institutions = institutions
@@ -24,10 +26,18 @@ struct InMemoryInstitutionRepository: InstitutionRepository {
     func allInstitutions() async throws -> [Institution] {
         institutions
     }
+
+    func save(_ institution: Institution) async throws {
+        if let index = institutions.firstIndex(where: { $0.id == institution.id }) {
+            institutions[index] = institution
+        } else {
+            institutions.append(institution)
+        }
+    }
 }
 
-struct InMemoryAccountRepository: AccountRepository {
-    let accounts: [Account]
+actor InMemoryAccountRepository: AccountRepository {
+    private(set) var accounts: [Account]
 
     init(_ accounts: [Account] = []) {
         self.accounts = accounts
@@ -48,18 +58,31 @@ struct InMemoryAccountRepository: AccountRepository {
         accounts.filter { $0.institutionID == id }
     }
 
-    /// A copy with one more account, to check what changes and what does not.
-    func adding(_ account: Account) -> InMemoryAccountRepository {
-        InMemoryAccountRepository(accounts + [account])
+    func save(_ account: Account) async throws {
+        if let index = accounts.firstIndex(where: { $0.id == account.id }) {
+            accounts[index] = account
+        } else {
+            accounts.append(account)
+        }
     }
 
-    func replacing(_ account: Account) -> InMemoryAccountRepository {
-        InMemoryAccountRepository(accounts.map { $0.id == account.id ? account : $0 })
+    func archive(_ id: AccountID) async throws {
+        let account = try await account(withID: id)
+        try await save(
+            Account(
+                id: account.id,
+                institutionID: account.institutionID,
+                name: account.name,
+                kind: account.kind,
+                currency: account.currency,
+                symbolName: account.symbolName,
+                isSystem: account.isSystem,
+                isArchived: true
+            )
+        )
     }
 }
 
-/// An actor because it stores entries: `save` mutates, and the domain compiles under
-/// strict concurrency.
 actor InMemoryEntryRepository: EntryRepository {
     private(set) var savedEntries: [Entry]
 
@@ -80,5 +103,21 @@ actor InMemoryEntryRepository: EntryRepository {
             }
             .flatMap(\.lines)
             .filter { query.accountIDs.contains($0.accountID) }
+    }
+}
+
+actor InMemorySettingsRepository: SettingsRepository {
+    private var storedBaseCurrency: CurrencyCode?
+
+    init(baseCurrency: CurrencyCode? = nil) {
+        self.storedBaseCurrency = baseCurrency
+    }
+
+    func baseCurrency() async throws -> CurrencyCode? {
+        storedBaseCurrency
+    }
+
+    func setBaseCurrency(_ currency: CurrencyCode) async throws {
+        storedBaseCurrency = currency
     }
 }

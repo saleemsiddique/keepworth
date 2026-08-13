@@ -101,20 +101,13 @@ func rejectsNonPositiveAmount(minorUnits: Int64) async throws {
 @Test("An archived account takes no new movements")
 func rejectsMovementIntoArchivedAccount() async throws {
     let ledger = try Ledger()
-    let archived = try Account(
-        id: ledger.cash.id,
-        name: ledger.cash.name,
-        kind: .asset,
-        currency: .eur,
-        isArchived: true
-    )
-    let accounts = ledger.accounts.replacing(archived)
-    let useCase = RecordExpense(accounts: accounts, entries: InMemoryEntryRepository())
+    try await ledger.accounts.archive(ledger.cash.id)
+    let useCase = RecordExpense(accounts: ledger.accounts, entries: InMemoryEntryRepository())
 
-    await #expect(throws: MovementError.archivedAccount(archived.id)) {
+    await #expect(throws: MovementError.archivedAccount(ledger.cash.id)) {
         try await useCase.execute(
             RecordExpense.Request(
-                accountID: archived.id,
+                accountID: ledger.cash.id,
                 categoryID: ledger.groceries.id,
                 amount: euros(4230),
                 occurredOn: try day(2026, 1, 31)

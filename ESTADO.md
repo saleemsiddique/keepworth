@@ -4,7 +4,7 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-08 — **Fase 1 (Dominio) completada**: 70 tests en verde, lint limpio y revisor sin hallazgos; ver sección 6 bis. Antes, el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-09 — **Fase 2 (Persistencia) completada**: esquema, migración v1, records y los cuatro repositorios; 99 tests en verde. Antes, el 2026-08-08, la **Fase 1 (Dominio)**; ver sección 6 bis. Antes, el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
 ---
 
@@ -29,9 +29,9 @@ https://claude.ai/code/artifact/fc6c746d-92e4-408e-bc33-32786328d709
 
 La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila sin un solo warning, los cinco tests placeholder pasan, el lint de formato sale limpio y **el CI está en verde**. Lo que falló y se corrigió está en la sección 3.
 
-La **Fase 1 (Dominio) está completada** (2026-08-08): 70 tests en verde, lint limpio y el revisor de arquitectura sin hallazgos. Cómo quedó y por qué está en la sección 6 bis.
+La **Fase 1 (Dominio)** está completada (2026-08-08) y la **Fase 2 (Persistencia)** también (2026-08-09): 99 tests en verde entre las dos. Cómo quedó el dominio y por qué está en la sección 6 bis; las decisiones de persistencia, en la sección 9.
 
-**La siguiente fase por empezar es la 2 (Persistencia).** Nada de ella está escrito.
+**La siguiente fase por empezar es la 3 (Design System).** Nada de ella está escrito.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -54,13 +54,13 @@ Apps/Keepworth/Sources/KeepworthApp.swift    @main
 Apps/Keepworth/Keepworth.entitlements        App Group + CloudKit
 
 Modules/Core/KeepworthDomain/                CLAUDE.md + la capa completa (Fase 1)
-Modules/Core/KeepworthPersistence/           CLAUDE.md + placeholder + test
+Modules/Core/KeepworthPersistence/           CLAUDE.md + la capa completa (Fase 2)
 Modules/Core/KeepworthSync/                  CLAUDE.md + placeholder + test
 Modules/Core/KeepworthDesignSystem/          CLAUDE.md + placeholder + test
 Modules/KeepworthAppCore/                    CLAUDE.md + RootView + test
 ```
 
-Los archivos `*Module.swift` que quedan en Persistence, Sync y DesignSystem son **andamiaje deliberado**: existen solo para que el target enlace y sea testeable. Cada uno se elimina cuando su módulo tenga contenido real, como ya se hizo con el del dominio.
+Los archivos `*Module.swift` que quedan en Sync y DesignSystem son **andamiaje deliberado**: existen solo para que el target enlace y sea testeable. Cada uno se elimina cuando su módulo tenga contenido real, como ya se hizo con el del dominio.
 
 ### Lo que no existe todavía
 
@@ -309,7 +309,9 @@ entry_line(
 app_setting(                        -- preferencias sincronizables
   key TEXT PRIMARY KEY,             -- base_currency_code, ...
   value TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT                   -- sin excepciones: toda tabla lleva las tres
 )
 ```
 
@@ -622,9 +624,25 @@ Proyecto generado, build en verde, los cinco tests placeholder pasando, lint lim
 - Una sola consulta de líneas (`EntryLineQuery`) en lugar de un método por combinación.
 - La suma la hace el dominio en Swift, no SQL: la capa que garantiza los invariantes es la que cuenta el dinero.
 
-### Fase 2 — Persistencia
+### Fase 2 — Persistencia — **completada (2026-08-09)**
 
-Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero indicada arriba. Migraciones versionadas desde el inicio. Records GRDB e implementación de los repositorios, **sin exponer tipos de GRDB en la API pública**. Semilla del primer arranque tal como está definida en la sección 6. Tests contra base de datos en memoria.
+Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero indicada arriba. Migración `v1` con el esquema entero de la sección 6, incluidas la vista `live_entry_line` y los índices parciales. Records GRDB y las cuatro implementaciones de repositorio, **sin un solo tipo de GRDB en la API pública**. Tests contra base de datos en memoria.
+
+99 tests en verde y lint limpio.
+
+**Decisiones tomadas al escribirla:**
+
+- **Los records son tipos aparte de las entidades.** No es una preferencia: `Domain` no puede importar GRDB, así que no puede conformar `FetchableRecord`. Eso resuelve el aviso de la Fase 1 — toda lectura pasa por `Account.init`, y hay un test que lo demuestra saltándose el `CHECK` del esquema con `PRAGMA ignore_check_constraints`.
+- **La semilla es un caso de uso, no una migración.** Depende de la divisa que elige el usuario y del idioma del dispositivo, y una migración tiene que ser determinista.
+- **`SettingsRepository` con API tipada** sobre la tabla clave-valor: nadie fuera escribe una clave a mano.
+- **El reloj se inyecta** en los repositorios (`now:`), para que los tests fijen las marcas de tiempo en vez de competir con el reloj.
+- **`app_setting` lleva las tres marcas de tiempo** como el resto de tablas. Se valoró dejarla sin `deleted_at` —una preferencia se sobrescribe, no se borra— y se descartó: sin tombstone la Fase 9 no puede sincronizarla con el mismo mecanismo, y una vez publicada la migración ya no se puede añadir.
+- **`created_at` y `deleted_at` no se reescriben nunca en un `save`.** Los lee `StoredTimestamps` de la fila existente. Limpiar un tombstone al guardar resucitaría una fila borrada en el siguiente sync.
+- **Reguardar un asiento entierra las líneas que ya no tiene.** Sin eso, editar un movimiento de tres líneas a dos dejaría viva la tercera bajo un asiento vivo, y el asiento almacenado dejaría de sumar cero sin ningún síntoma. Lo encontró el revisor de arquitectura; hay test.
+
+**Lo que la Fase 2 obligó a añadir al dominio**: `save` y `archive` en los repositorios de cuentas y bancos, el protocolo `SettingsRepository` y el caso de uso `SeedFirstLaunch`.
+
+**Lo que queda fuera a propósito**: el borrado (con su regla de «sin movimientos se borra, con movimientos se archiva») llega en la Fase 4, junto con la pantalla que lo pide. `ValueObservation` también.
 
 ### Fase 3 — Design System
 
