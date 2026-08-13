@@ -1,7 +1,7 @@
 # Tuist
 #
-# El proyecto y el workspace son artefactos generados a partir de Project.swift.
-# Nunca se editan a mano ni se versionan: se regeneran con `tuist generate`.
+# The project and the workspace are artefacts generated from Project.swift. They are
+# never edited by hand and never committed: `tuist generate` rebuilds them.
 *.xcodeproj
 *.xcworkspace
 .tuist-version

@@ -12,7 +12,7 @@ No existe servidor propio en ningún punto de este flujo: los datos van del disp
 
 ## Por qué el esquema ya está preparado
 
-Estas tres decisiones se tomaron en la Fase 0 precisamente para que este módulo fuera posible sin migrar datos de usuario:
+Estas tres decisiones se tomaron al diseñar el modelo de datos y están implementadas en la migración `v1` (Fase 2), precisamente para que este módulo sea posible sin migrar datos de usuario:
 
 - **UUID como identificador**: el `recordName` de CloudKit se deriva de él.
 - **`updated_at` en toda fila**: es el criterio de resolución de conflictos.

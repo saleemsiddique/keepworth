@@ -4,7 +4,9 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-09 — **Fase 2 (Persistencia) completada**: esquema, migración v1, records y los cuatro repositorios; 99 tests en verde. Antes, el 2026-08-08, la **Fase 1 (Dominio)**; ver sección 6 bis. Antes, el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-13 — **Fase 2 (Persistencia) mergeada a `main`** (PR #4): esquema, migración v1, records y los cuatro repositorios; 99 tests en verde. Antes, la **Fase 1 (Dominio)**, mergeada el 2026-08-08 (PR #2); ver sección 6 bis. Antes, el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+
+**Siguiente paso: Fase 3 (Design System).**
 
 ---
 
@@ -29,7 +31,9 @@ https://claude.ai/code/artifact/fc6c746d-92e4-408e-bc33-32786328d709
 
 La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila sin un solo warning, los cinco tests placeholder pasan, el lint de formato sale limpio y **el CI está en verde**. Lo que falló y se corrigió está en la sección 3.
 
-La **Fase 1 (Dominio)** está completada (2026-08-08) y la **Fase 2 (Persistencia)** también (2026-08-09): 99 tests en verde entre las dos. Cómo quedó el dominio y por qué está en la sección 6 bis; las decisiones de persistencia, en la sección 9.
+La **Fase 1 (Dominio)** y la **Fase 2 (Persistencia)** están completadas y **mergeadas a `main`**: la primera el 2026-08-08 (PR #2), la segunda el 2026-08-13 (PR #4). 99 tests en verde entre las dos. Cómo quedó el dominio y por qué está en la sección 6 bis; las decisiones de persistencia, en la sección 9.
+
+Entre medias, el PR #3 reescribió los comentarios del código en inglés y los redujo. Esa convención ya es regla dura: **todo lo que va dentro de un archivo de código está en inglés** —comentarios, identificadores y nombres de test, en Swift y también en `Project.swift`, el CI, los entitlements y los hooks—, y el español se queda en la documentación y en la conversación. Está en `CLAUDE.md` § «Idioma del código», con sus dos excepciones.
 
 **La siguiente fase por empezar es la 3 (Design System).** Nada de ella está escrito.
 
@@ -42,6 +46,7 @@ Tuist/Package.resolved                       lockfile: fija GRDB 7.11.1 en Mac y
 mise.toml                                    versiones de tuist y xcbeautify
 .swift-format                                configuración de formato
 .gitignore                                   con sección Tuist añadida
+.gitattributes                               fuerza LF: con CRLF los hooks de shell no arrancan
 
 .claude/settings.json                        hooks
 .claude/hooks/format-swift.sh                formatea Swift tras cada edición
@@ -418,6 +423,8 @@ Y la cuenta interna **Saldo inicial** (`equity`, `is_system = 1`, oculta de toda
 
 Deliberadamente **no** hay categoría "Otros" en gastos: el cajón de sastre se traga justo lo que querías entender, y quien la quiera se la crea en diez segundos.
 
+Esta lista es todavía **documentación, no código**: `SeedFirstLaunch` recibe los nombres ya traducidos (`SeedFirstLaunch.Names`) porque el dominio no sabe de idiomas. Los literales concretos entran en el String Catalog en la Fase 4, y es ahí donde hay que copiar esta lista.
+
 Las categorías se crean con el nombre en el idioma del sistema y **son del usuario desde ese momento**: si luego cambia el idioma del dispositivo, no se retraducen. La alternativa —marcarlas como "del sistema" y traducirlas al vuelo— obliga a arrastrar un caso especial por todo el código y se rompe igual en cuanto el usuario renombra una.
 
 ### Preparado para lo que viene
@@ -469,9 +476,11 @@ El exponente es **2 para todas las divisas en v1**, y vive en un único sitio: `
 - **Los importes se introducen en positivo.** El signo lo pone la contabilidad según de qué lado esté cada cuenta, no el usuario.
 - **Una cuenta archivada no admite movimientos nuevos**, pero conserva su histórico.
 
-### Un aviso para la Fase 2
+### Un aviso para la Fase 2 — **resuelto**
 
 `Account.init` es quien garantiza que una categoría nunca tenga banco, y lanza si se incumple. **Si la implementación GRDB decodifica `Account` con `FetchableRecord` por un camino que no pase por ese init, el invariante deja de estar garantizado en lectura.** Lo señaló el revisor de arquitectura al auditar la Fase 1. La decodificación tiene que pasar por el inicializador que valida, o el invariante es solo una promesa.
+
+La Fase 2 lo resolvió separando records y entidades: el record conforma `FetchableRecord`, la entidad no, y convertir de uno a otro obliga a pasar por el init que valida. Hay un test que lo demuestra saltándose el `CHECK` del esquema con `PRAGMA ignore_check_constraints`.
 
 ---
 
@@ -606,7 +615,7 @@ Cada fase termina compilando, con sus tests en verde y en CI. No se empieza una 
 
 Proyecto generado, build en verde, los cinco tests placeholder pasando, lint limpio y los tres criterios del entorno de IA comprobados. Lo que falló durante la verificación y cómo se corrigió está en la sección 3.
 
-### Fase 1 — Dominio — **completada (2026-08-08)**
+### Fase 1 — Dominio — **completada y mergeada (PR #2, 2026-08-08)**
 
 `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine` y las reglas de balance. Protocolos `InstitutionRepository`, `AccountRepository` y `EntryRepository`. Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
 
@@ -624,7 +633,7 @@ Proyecto generado, build en verde, los cinco tests placeholder pasando, lint lim
 - Una sola consulta de líneas (`EntryLineQuery`) en lugar de un método por combinación.
 - La suma la hace el dominio en Swift, no SQL: la capa que garantiza los invariantes es la que cuenta el dinero.
 
-### Fase 2 — Persistencia — **completada (2026-08-09)**
+### Fase 2 — Persistencia — **completada y mergeada (PR #4, 2026-08-13)**
 
 Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero indicada arriba. Migración `v1` con el esquema entero de la sección 6, incluidas la vista `live_entry_line` y los índices parciales. Records GRDB y las cuatro implementaciones de repositorio, **sin un solo tipo de GRDB en la API pública**. Tests contra base de datos en memoria.
 
@@ -640,9 +649,9 @@ Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero in
 - **`created_at` y `deleted_at` no se reescriben nunca en un `save`.** Los lee `StoredTimestamps` de la fila existente. Limpiar un tombstone al guardar resucitaría una fila borrada en el siguiente sync.
 - **Reguardar un asiento entierra las líneas que ya no tiene.** Sin eso, editar un movimiento de tres líneas a dos dejaría viva la tercera bajo un asiento vivo, y el asiento almacenado dejaría de sumar cero sin ningún síntoma. Lo encontró el revisor de arquitectura; hay test.
 
-**Lo que la Fase 2 obligó a añadir al dominio**: `save` y `archive` en los repositorios de cuentas y bancos, el protocolo `SettingsRepository` y el caso de uso `SeedFirstLaunch`.
+**Lo que la Fase 2 obligó a añadir al dominio**: `save` en los repositorios de cuentas y bancos, `archive` en el de cuentas, el protocolo `SettingsRepository` y el caso de uso `SeedFirstLaunch`.
 
-**Lo que queda fuera a propósito**: el borrado (con su regla de «sin movimientos se borra, con movimientos se archiva») llega en la Fase 4, junto con la pantalla que lo pide. `ValueObservation` también.
+**Lo que queda fuera a propósito**: el borrado (con su regla de «sin movimientos se borra, con movimientos se archiva») llega en la Fase 4, junto con la pantalla que lo pide. Hoy **no existe ninguna operación de borrado**: `AccountRepository.archive` es lo único que hay, y el único `deleted_at` que se escribe es el que entierra las líneas que un asiento reguardado ya no tiene. `archive` en bancos y `ValueObservation` tampoco están.
 
 ### Fase 3 — Design System
 
@@ -712,7 +721,7 @@ Criterios de aceptación por fase:
 
 - **Entorno de IA** — editar un `.swift` deja el archivo formateado sin intervención; tocar `Project.swift` regenera el proyecto; el agente revisor detecta un `import GRDB` introducido a propósito dentro de una feature.
 - **Dominio** — un asiento cuyas líneas no suman cero es rechazado con error; un asiento de una sola línea es rechazado; sumar `Money` de divisas distintas falla en vez de aproximar; una cuenta de gasto o ingreso con banco es rechazada; el patrimonio neto es correcto mezclando activo y pasivo, y **no varía** al crear, renombrar o archivar una categoría; el `netWorthChange` del informe coincide al céntimo con la variación del patrimonio en el periodo, **también cuando dentro de él se declara el saldo inicial de una cuenta nueva**.
-- **Persistencia** — crear, editar y borrar cuentas y movimientos sobre base de datos en memoria; el borrado marca `deleted_at` y la fila deja de aparecer en las consultas; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas.
+- **Persistencia** — crear y editar cuentas y movimientos sobre base de datos en memoria; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone. El criterio de **borrado** —marca `deleted_at` y la fila desaparece de las consultas— se verifica en la Fase 4, que es donde se implementa.
 - **UI** — galería de previews revisada en tema claro y oscuro; recorrido manual en simulador de crear cuenta → registrar gasto → verlo en Resumen y en Movimientos → editarlo → borrarlo, con el patrimonio actualizándose en cada paso.
 - **Import/Export** — exportar, borrar la base de datos, reimportar, y comprobar que el patrimonio y el número de movimientos coinciden exactamente.
 - **Sync** — dos simuladores con la misma cuenta de iCloud; un cambio en uno aparece en el otro; editar el mismo movimiento en ambos resuelve sin duplicar ni perder datos.

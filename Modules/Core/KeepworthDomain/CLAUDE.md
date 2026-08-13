@@ -10,8 +10,9 @@ Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta cap
 
 **Expone**:
 - Entidades: `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine`.
-- Protocolos de repositorio: `InstitutionRepository`, `AccountRepository`, `EntryRepository`. Definidos aquí, implementados en `KeepworthPersistence`.
-- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
+- Tipos de apoyo: `CalendarDate` —fecha sin hora ni zona, la de `occurredOn`— e `Identifier<T>`, que da `AccountID`, `EntryID`, `InstitutionID` y `EntryLineID`.
+- Protocolos de repositorio: `InstitutionRepository`, `AccountRepository`, `EntryRepository`, `SettingsRepository`, con `EntryLineQuery` como única forma de pedir líneas. Definidos aquí, implementados en `KeepworthPersistence`.
+- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
 - Errores de dominio descriptivos, nunca `nil` para señalar fallo.
 
 `Entry.twoLine` es **interno a propósito**: construir un movimiento pasa siempre por un caso de uso, que es quien valida los tipos de cuenta. Si una pantalla necesita un movimiento que hoy no existe, se añade un caso de uso, no se abre el constructor.

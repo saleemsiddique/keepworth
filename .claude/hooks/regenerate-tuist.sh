@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Regenera el proyecto Xcode cuando cambia la definición de Tuist.
-# Evita el fallo clásico de declarar un módulo y seguir trabajando sobre un
-# .xcodeproj desactualizado que no lo contiene.
+# Regenerates the Xcode project whenever the Tuist definition changes.
+# Avoids the classic failure of declaring a module and carrying on against a stale
+# .xcodeproj that does not contain it.
 set -uo pipefail
 
 payload=$(cat)
@@ -15,7 +15,7 @@ case "$(basename "$file_path")" in
 esac
 
 if ! command -v tuist >/dev/null 2>&1; then
-    echo "tuist no disponible: instálalo con 'mise install tuist' antes de continuar." >&2
+    echo "tuist unavailable: install it with 'mise install tuist' before continuing." >&2
     exit 0
 fi
 
@@ -23,7 +23,7 @@ cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
 tuist install >/dev/null 2>&1
 if ! tuist generate --no-open; then
-    # Se devuelve 2 para que Claude vea el error y corrija el manifiesto.
-    echo "tuist generate ha fallado: revisa Project.swift." >&2
+    # Exit 2 so the agent sees the failure and fixes the manifest.
+    echo "tuist generate failed: check Project.swift." >&2
     exit 2
 fi

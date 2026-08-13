@@ -74,6 +74,17 @@ Los bancos sí son entidad propia (`Institution`): agrupan cuentas y dan un tota
 
 Todo texto visible vive en un String Catalog, en inglés y español. Un literal de cadena en una vista es un bug de localización.
 
+### Idioma del código
+
+**Todo lo que va dentro de un archivo de código está en inglés**: identificadores, comentarios, mensajes de error de desarrollador y nombres de test. Sin excepciones por tipo de archivo — Swift, `Project.swift`, `Tuist/Package.swift`, workflows de CI, entitlements y scripts de hook incluidos.
+
+La documentación (`CLAUDE.md`, `ESTADO.md`) y la conversación van en español. La frontera es el archivo: si el compilador, `xcodebuild` o la shell lo leen, está en inglés.
+
+Dos excepciones, y solo dos:
+
+- **Texto visible para el usuario** mientras no exista localización: hoy es `NSFaceIDUsageDescription` en `Project.swift`, y se mueve al String Catalog en cuanto haya uno.
+- **Datos de prueba que simulan lo que teclearía el usuario**: una cuenta llamada `"Nómina"` en un test es un dato, no código. Traducirla no mejora nada y le quita realismo al caso.
+
 ### Dependencias externas
 
 Solo GRDB está aprobada. Cualquier otra librería se propone al usuario con alternativas antes de instalarla, nunca se añade por iniciativa propia.

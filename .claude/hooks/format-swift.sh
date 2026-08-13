@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Formatea con swift-format el archivo Swift que Claude acaba de editar.
-# Recibe por stdin el JSON del hook PostToolUse.
+# Runs swift-format over the Swift file the agent has just edited.
+# Reads the PostToolUse hook JSON from stdin.
 set -uo pipefail
 
 payload=$(cat)
@@ -12,8 +12,8 @@ file_path=$(printf '%s' "$payload" | python3 -c \
 [[ -f "$file_path" ]] || exit 0
 
 if ! xcrun --find swift-format >/dev/null 2>&1; then
-    # Sin Xcode 16+ el hook queda inerte. Se avisa una vez en lugar de fallar en silencio.
-    echo "swift-format no disponible: instala Xcode 16 o superior." >&2
+    # Without Xcode 16+ the hook is inert. Say so once rather than fail silently.
+    echo "swift-format unavailable: install Xcode 16 or later." >&2
     exit 0
 fi
 

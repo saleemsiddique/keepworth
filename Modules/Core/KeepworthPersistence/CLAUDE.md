@@ -6,12 +6,12 @@ Implementa los protocolos de repositorio de `KeepworthDomain` sobre SQLite con G
 
 **Importa**: `KeepworthDomain` y `GRDB`. Nada más.
 
-**Expone**: implementaciones concretas de `AccountRepository` y `EntryRepository`, la configuración de la base de datos y el registro de migraciones. **No expone tipos de GRDB en su API pública**: quien la usa recibe entidades de `Domain`, nunca `Record` ni `Row`.
+**Expone**: `AppDatabase` con la configuración de la base de datos y el registro de migraciones, y las cuatro implementaciones de repositorio: `SQLiteInstitutionRepository`, `SQLiteAccountRepository`, `SQLiteEntryRepository` y `SQLiteSettingsRepository`. **No expone tipos de GRDB en su API pública**: quien la usa recibe entidades de `Domain`, nunca `Record`, `Row` ni `DatabaseWriter`.
 
 ## Base de datos
 
 - Vive en el contenedor del **App Group**, no en Documents. El widget necesita leerla.
-- `DatabasePool`, no `DatabaseQueue`: hay lecturas concurrentes desde el widget.
+- `DatabasePool`, no `DatabaseQueue`: hay lecturas concurrentes desde el widget. Vale para la base de datos real; la de tests y previews (`AppDatabase.inMemory()`) es un `DatabaseQueue`, que sin fichero es lo único que tiene sentido.
 - Protección de fichero: `.completeUntilFirstUserAuthentication`. **No usar `.complete`**: impediría al widget leer con el dispositivo bloqueado.
 
 ## Reglas de esquema
@@ -23,9 +23,9 @@ Implementa los protocolos de repositorio de `KeepworthDomain` sobre SQLite con G
 5. `PRAGMA foreign_keys = ON`. No es el valor por defecto de SQLite.
 6. Cada cambio de esquema es una **migración nueva y versionada**. Una migración ya publicada no se edita jamás, ni para corregir un typo.
 
-## Observación
+## Observación — pendiente (Fase 4)
 
-La UI se refresca con `ValueObservation`. Los repositorios exponen secuencias de valores de `Domain`, no de records de GRDB.
+La UI se refresca con `ValueObservation`. Los repositorios exponen secuencias de valores de `Domain`, no de records de GRDB. Todavía no está escrito: llega con las primeras pantallas.
 
 ## Records
 

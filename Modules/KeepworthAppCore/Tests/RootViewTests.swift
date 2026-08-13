@@ -5,7 +5,7 @@ import Testing
 // Under the Swift 6 language mode, conforming to `View` isolates the initialiser to the
 // main actor, so any test building a view must be isolated too.
 @MainActor
-@Test("La vista raíz se construye")
+@Test("The root view builds")
 func rootViewInitialises() {
     _ = RootView()
 }

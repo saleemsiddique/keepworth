@@ -11,8 +11,8 @@ import PackageDescription
     )
 #endif
 
-// Única dependencia externa aprobada del proyecto. Cualquier añadido se propone
-// al usuario con alternativas antes de instalarse (ver CLAUDE.md).
+// The only approved external dependency. Anything else is proposed to the user with
+// alternatives before being installed (see CLAUDE.md).
 let package = Package(
     name: "KeepworthDependencies",
     dependencies: [

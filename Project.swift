@@ -1,8 +1,8 @@
 import ProjectDescription
 
-// El Team ID se resuelve al firmar para dispositivo físico; el simulador no lo necesita.
-// Cambiar `bundleIdPrefix` implica cambiar también el App Group y el contenedor de CloudKit,
-// y volver a registrarlos en el portal de Apple Developer.
+// The Team ID is resolved when signing for a physical device; the simulator does not need it.
+// Changing `bundleIdPrefix` means changing the App Group and the CloudKit container too, and
+// registering all three again in the Apple Developer portal.
 let bundleIdPrefix = "com.saleemsiddique.keepworth"
 let appGroup = "group.com.saleemsiddique.keepworth"
 let iCloudContainer = "iCloud.com.saleemsiddique.keepworth"
@@ -10,19 +10,19 @@ let iCloudContainer = "iCloud.com.saleemsiddique.keepworth"
 let deploymentTargets: DeploymentTargets = .iOS("26.0")
 let destinations: Destinations = [.iPhone, .iPad]
 
-// El modo de lenguaje Swift 6 ya implica concurrencia estricta completa, así que
-// `SWIFT_STRICT_CONCURRENCY` sería redundante aquí.
+// The Swift 6 language mode already implies complete strict concurrency, so
+// `SWIFT_STRICT_CONCURRENCY` would be redundant here.
 let baseSettings: SettingsDictionary = [
     "SWIFT_VERSION": "6.0",
     "SWIFT_TREAT_WARNINGS_AS_ERRORS": "YES",
     "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
 ]
 
-/// Declara un módulo como framework con su target de tests asociado.
+/// Declares a module as a framework with its own test target.
 ///
-/// La lista de `dependencies` de cada llamada es la aplicación literal de la ley de
-/// dependencias documentada en `CLAUDE.md`. Si una feature necesita GRDB, el error
-/// está en el diseño de la feature, no aquí.
+/// The `dependencies` list of each call is the literal application of the dependency law
+/// documented in `CLAUDE.md`. If a feature needs GRDB, the mistake is in the design of the
+/// feature, not here.
 func module(
     name: String,
     path: String,
@@ -78,7 +78,7 @@ let coreModules: [Target] =
         path: "Modules/Core/KeepworthDesignSystem"
     )
 
-// Composition root: el único módulo autorizado a conocer implementaciones concretas.
+// Composition root: the only module allowed to know concrete implementations.
 let appCore: [Target] = module(
     name: "KeepworthAppCore",
     path: "Modules/KeepworthAppCore",
@@ -111,12 +111,12 @@ let app: Target = .target(
     settings: .settings(base: baseSettings)
 )
 
-// El target `KeepworthWidgets` (product: .appExtension, NSExtensionPointIdentifier
-// com.apple.widgetkit-extension) se añade en la Fase 7. Dependerá de Domain,
-// Persistence y DesignSystem: es la única excepción a la regla de que solo AppCore
-// toca la capa de datos, porque lee la base de datos compartida por App Group.
+// The `KeepworthWidgets` target (product: .appExtension, NSExtensionPointIdentifier
+// com.apple.widgetkit-extension) arrives in phase 7. It will depend on Domain,
+// Persistence and DesignSystem: the single exception to the rule that only AppCore
+// touches the data layer, because it reads the database shared through the App Group.
 //
-// Los targets de features se añaden en la Fase 4, cuando existan.
+// Feature targets are added in phase 4, once they exist.
 
 let project = Project(
     name: "Keepworth",

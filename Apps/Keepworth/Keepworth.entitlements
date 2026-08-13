@@ -2,15 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- La base de datos vive en el contenedor del App Group para que el widget
-	     (Fase 7) pueda leerla. Cambiar este identificador implica cambiarlo también
-	     en Project.swift y en la configuración de KeepworthPersistence. -->
+	<!-- The database lives in the App Group container so the widget (phase 7) can read
+	     it. Changing this identifier means changing it in Project.swift and in the
+	     KeepworthPersistence setup too. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.saleemsiddique.keepworth</string>
 	</array>
 
-	<!-- Sync con el iCloud privado del usuario (Fase 9). No hay servidor propio. -->
+	<!-- Sync with the user's own private iCloud (phase 9). There is no server. -->
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.com.saleemsiddique.keepworth</string>
