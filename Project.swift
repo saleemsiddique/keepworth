@@ -23,12 +23,21 @@ let baseSettings: SettingsDictionary = [
 /// The `dependencies` list of each call is the literal application of the dependency law
 /// documented in `CLAUDE.md`. If a feature needs GRDB, the mistake is in the design of the
 /// feature, not here.
+///
+/// `resourceGlobs` are relative to `path` and default to none: a glob matching nothing fails
+/// generation, and only the design system owns an asset catalog.
 func module(
     name: String,
     path: String,
-    dependencies: [TargetDependency] = []
+    dependencies: [TargetDependency] = [],
+    resourceGlobs: [String] = []
 ) -> [Target] {
-    [
+    let resources: ResourceFileElements? =
+        resourceGlobs.isEmpty
+        ? nil
+        : .resources(resourceGlobs.map { .glob(pattern: "\(path)/\($0)") })
+
+    return [
         .target(
             name: name,
             destinations: destinations,
@@ -36,6 +45,7 @@ func module(
             bundleId: "\(bundleIdPrefix).\(name.lowercased())",
             deploymentTargets: deploymentTargets,
             sources: ["\(path)/Sources/**"],
+            resources: resources,
             dependencies: dependencies,
             settings: .settings(base: baseSettings)
         ),
@@ -73,9 +83,12 @@ let coreModules: [Target] =
             .target(name: "KeepworthPersistence"),
         ]
     )
+    // The only module with resources: the six semantic colours live in an asset catalog so
+    // they carry a light and a dark variant.
     + module(
         name: "KeepworthDesignSystem",
-        path: "Modules/Core/KeepworthDesignSystem"
+        path: "Modules/Core/KeepworthDesignSystem",
+        resourceGlobs: ["Resources/**"]
     )
 
 // Composition root: the only module allowed to know concrete implementations.
@@ -118,8 +131,14 @@ let app: Target = .target(
 //
 // Feature targets are added in phase 4, once they exist.
 
+// Synthesized asset accessors are off because Tuist's accessor imports UIKit into the target
+// that owns the catalog, and `KeepworthDesignSystem` may import SwiftUI and nothing else. The
+// option still leaves `Bundle.module`, which is Foundation only and is all `Colors.swift`
+// needs. It applies to the whole project, so no target gets generated accessors for strings,
+// assets or fonts: read the String Catalog with `String(localized:)`, not with an `L10n` type.
 let project = Project(
     name: "Keepworth",
     organizationName: "Keepworth",
+    options: .options(disableSynthesizedResourceAccessors: true),
     targets: coreModules + appCore + [app]
 )

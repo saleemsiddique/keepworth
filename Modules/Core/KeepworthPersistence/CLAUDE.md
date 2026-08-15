@@ -19,6 +19,8 @@ Implementa los protocolos de repositorio de `KeepworthDomain` sobre SQLite con G
 1. **UUID como clave primaria, nunca autoincremental.** Un `INTEGER PRIMARY KEY AUTOINCREMENT` rompe el sync con CloudKit de forma irreparable.
 2. Toda tabla lleva `created_at`, `updated_at` y `deleted_at`.
 3. **Soft delete siempre**: borrar es escribir `deleted_at`. Las consultas filtran `deleted_at IS NULL`. Un `DELETE FROM` en código de producción es un bug: sin tombstone, el registro reaparece en el siguiente sync.
+
+   Hoy **no existe ninguna operación de borrado en esta capa**. `AccountRepository.archive` es lo único que hay, y el único `deleted_at` que se escribe es el que entierra las líneas que un asiento reguardado ya no tiene. El borrado llega en la Fase 4, con la pantalla que lo pide y con su regla —sin movimientos se borra, con movimientos se archiva—. La regla de arriba es la que tendrá que cumplir cuando exista.
 4. **Las líneas se consultan por la vista `live_entry_line`, nunca por `entry_line`.** Una línea solo cuenta si ni ella ni su asiento están borrados; filtrar solo por la línea deja vivas las líneas de asientos borrados y descuadra saldos e informes sin dar ningún síntoma.
 5. `PRAGMA foreign_keys = ON`. No es el valor por defecto de SQLite.
 6. Cada cambio de esquema es una **migración nueva y versionada**. Una migración ya publicada no se edita jamás, ni para corregir un typo.
@@ -43,4 +45,8 @@ Esa separación es lo que obliga a que **toda lectura pase por el inicializador 
 
 Contra base de datos **en memoria**, nunca contra un fichero real.
 
-Casos que siempre deben existir: cada migración aplica sobre base vacía y sobre base con datos; el borrado marca `deleted_at` y la fila desaparece de las consultas; los saldos derivados coinciden con la suma de líneas.
+Casos que siempre deben existir: cada migración aplica sobre base vacía y sobre base con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone.
+
+El test de que una fila con `deleted_at` desaparece de las consultas existe, pero hoy escribe el `UPDATE` a mano porque **no hay API de borrado que llamar**. Cuando la Fase 4 la traiga, ese test pasa a ejercitarla y se convierte en criterio permanente.
+
+El helper `StoredLedger` monta un libro sembrado sobre los cuatro repositorios reales. Se llama así frente al `Ledger` de `KeepworthDomain`, que ve lo mismo a través de dobles en memoria; ninguno de los dos toca un fichero.

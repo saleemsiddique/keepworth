@@ -7,7 +7,7 @@ import Testing
 
 @Test("An account survives a round trip through SQLite unchanged")
 func roundTripsAnAccount() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let bbva = try Institution(name: "BBVA")
     try await ledger.institutions.save(bbva)
     let original = try Account(
@@ -25,7 +25,7 @@ func roundTripsAnAccount() async throws {
 
 @Test("Saving an account twice updates it instead of duplicating it")
 func savingTwiceUpdates() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let original = try Account(name: "Efectivo", kind: .asset, currency: .eur)
     try await ledger.accounts.save(original)
 
@@ -37,11 +37,11 @@ func savingTwiceUpdates() async throws {
 
 @Test("Updating an account keeps the date it was created")
 func updatePreservesCreationDate() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let original = try Account(name: "Efectivo", kind: .asset, currency: .eur)
     try await ledger.accounts.save(original)
 
-    let later = LedgerOnDisk.creationDate.addingTimeInterval(86400)
+    let later = StoredLedger.creationDate.addingTimeInterval(86400)
     let laterRepository = SQLiteAccountRepository(database: ledger.database, now: { later })
     try await laterRepository.save(
         Account(id: original.id, name: "Cash", kind: .asset, currency: .eur)
@@ -62,13 +62,13 @@ func updatePreservesCreationDate() async throws {
             arguments: [identifier]
         )
     }
-    #expect(createdAt == LedgerOnDisk.creationDate)
+    #expect(createdAt == StoredLedger.creationDate)
     #expect(updatedAt == later)
 }
 
 @Test("A missing account throws instead of returning nothing")
 func missingAccountThrows() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let unknown = AccountID()
 
     await #expect(throws: RepositoryError.accountNotFound(unknown)) {
@@ -78,7 +78,7 @@ func missingAccountThrows() async throws {
 
 @Test("Archiving marks the account without removing it")
 func archivingKeepsTheRow() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let account = try Account(name: "Efectivo", kind: .asset, currency: .eur)
     try await ledger.accounts.save(account)
 
@@ -89,7 +89,7 @@ func archivingKeepsTheRow() async throws {
 
 @Test("A soft-deleted account disappears from every query but stays in the table")
 func softDeletedAccountDisappears() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let account = try Account(name: "Efectivo", kind: .asset, currency: .eur)
     try await ledger.accounts.save(account)
 
@@ -113,7 +113,7 @@ func softDeletedAccountDisappears() async throws {
 
 @Test("A bank lists only its own accounts")
 func listsAccountsOfOneBank() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let bbva = try Institution(name: "BBVA")
     let tradeRepublic = try Institution(name: "Trade Republic")
     try await ledger.institutions.save(bbva)
@@ -133,7 +133,7 @@ func listsAccountsOfOneBank() async throws {
 
 @Test("A row that the domain considers impossible fails on read instead of coming through")
 func rejectsImpossibleRowOnRead() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
 
     let bank = UUID().uuidString
     // The pragma removes the schema's net for this connection, standing in for what a bad
