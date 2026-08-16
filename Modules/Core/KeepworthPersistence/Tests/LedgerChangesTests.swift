@@ -86,19 +86,24 @@ func readsRingNothingButWritesStillDo() async throws {
     let ledger = try StoredLedger()
     try await ledger.seed()
     let observer = SQLiteLedgerChanges(database: ledger.database)
+    // Both streams are created **here**, not inside the `async let`. `changes()` registers the
+    // listener synchronously, and deferring it into the child task lets the write below land
+    // first and the signal be missed — a flaky failure that looks like a bug in the code.
+    let duringReads = observer.changes()
+    // A second stream and not the first one again: an `AsyncThrowingStream` takes one
+    // consumer, and the wait below spends it.
+    let duringWrite = observer.changes()
 
     // Without this the signal would fire on every screen load and each screen would reload
     // itself forever.
-    async let afterReads = receivedSignal(from: observer.changes(), waiting: .seconds(1))
+    async let afterReads = receivedSignal(from: duringReads, waiting: .seconds(1))
     _ = try await ledger.accounts.accounts(ofKinds: [.asset])
     _ = try await ledger.entries.entries(matching: try EntryQuery(limit: 10))
     #expect(try await afterReads == false)
 
     // The second half is what stops the first from being vacuous: an observation that never
-    // fired at all would satisfy the silence above and fail right here. A second stream and
-    // not the first one again, because an `AsyncThrowingStream` takes one consumer and the
-    // wait above already spent it.
-    async let afterWrite = receivedSignal(from: observer.changes())
+    // fired at all would satisfy the silence above and fail right here.
+    async let afterWrite = receivedSignal(from: duringWrite)
     try await ledger.settings.setBaseCurrency(.eur)
     #expect(try await afterWrite)
 }
