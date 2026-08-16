@@ -25,7 +25,11 @@ Estas reglas no se negocian por conveniencia. Si una tarea parece exigir romper 
 
 **Ninguna feature importa `KeepworthPersistence`, `KeepworthSync`, `GRDB` ni `CloudKit`.** Las features dependen de protocolos declarados en `Domain`; `KeepworthAppCore` es el único lugar donde se instancian implementaciones concretas.
 
-Un `import GRDB` dentro de `Modules/Features/` es un error de arquitectura, no un atajo.
+Un `import GRDB` dentro de `Modules/Features/` es un error de arquitectura, no un atajo. Si una feature necesita algo que no está en los protocolos de `Domain`, **se amplía el protocolo**.
+
+Excepciones, y solo estas dos: `Apps/KeepworthWidgets` depende de `Persistence` porque lee la base de datos del App Group, y `KeepworthDesignSystemTests` importa UIKit porque es la única API que admite no haber encontrado un color del catálogo. La tabla limita lo que importa cada **módulo**, no sus tests.
+
+**Un archivo bajo `Modules/` sin target declarado en `Project.swift` esquiva toda la validación**: no lo ve `tuist generate`, ni el build, ni el CI. El target y el primer `.swift` del módulo van en el mismo commit.
 
 ### Dinero
 
@@ -97,11 +101,36 @@ Nada de lo que quede en el repositorio lleva atribución de IA: sin `Co-Authored
 
 El CI dispara en `pull_request` y en `push` a `main`: **empujar una rama sin abrir PR no ejecuta nada.**
 
+Las PR se cierran con **commit de merge** y la rama se conserva. Ni squash, ni `--delete-branch`: cada fase queda como una unidad navegable en el historial.
+
+### Cambiar una decisión
+
+Cambiar una regla no es editar el sitio donde la encontraste. Una decisión de este proyecto vive en varios archivos a la vez, y dejar uno atrás no rompe nada — solo hace que la documentación mienta, que es peor que no tenerla.
+
+Cuando cambie una regla, recorre los cinco:
+
+1. **`CLAUDE.md`** (este archivo) — el enunciado corto de la regla.
+2. **`ESTADO.md`** — el enunciado largo, con el **porqué** y con qué sustituye. Una regla que cambia sin dejar rastro de por qué cambió se revierte sola en tres meses.
+3. **El `CLAUDE.md` del módulo** afectado.
+4. **`.claude/agents/architecture-reviewer.md`** — el que más se olvida. Si sus reglas se quedan viejas, **denuncia como violación justo lo que se acaba de decidir**. Ya pasó al añadir el token `expense`.
+5. **Las maquetas y ejemplos** de `ESTADO.md` §6 y §8, y las galerías del design system. Son la referencia visual, y siguen enseñando lo viejo aunque el texto de al lado diga otra cosa.
+
+Dos hábitos que salen de haberlo hecho mal:
+
+- **Enuncia el criterio, no una lista de ejemplos.** «`ink` para un saldo positivo o un total» dejó fuera el saldo negativo, y el código y la documentación acabaron discrepando sin que nadie lo viera. «`ink` para todo lo que no entra ni sale» no deja huecos.
+- **Cuando dos documentos digan lo mismo, que lo digan con las mismas palabras.** Si uno matiza y otro no, el matiz se pierde en la siguiente lectura.
+
 ---
 
 ## Comandos
 
 **Solo funcionan en el Mac.** Tuist y `swift-format` no existen en Windows, así que desde ahí no se puede compilar, testear ni formatear, y los dos hooks quedan inertes. El detalle está en `ESTADO.md` §3.
+
+Los binarios vienen de `mise`, y los hooks corren en un shell no interactivo. Si un comando «no existe», es el `PATH`:
+
+```bash
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+```
 
 ```bash
 tuist install            # resuelve dependencias externas
@@ -123,6 +152,26 @@ xcrun swift-format lint --configuration .swift-format --recursive --strict Modul
 **El esquema es `Keepworth-Workspace`, no `Keepworth`.** Tuist autogenera un esquema por target: el de `Keepworth` es el de la app y su acción de test está vacía, así que ejecuta cero tests sin avisar de ello. `Keepworth-Workspace` es el único que agrupa los cinco targets de test.
 
 El `.xcodeproj` y el `.xcworkspace` son artefactos generados: no se editan a mano ni se versionan. Para añadir un módulo o cambiar dependencias se edita `Project.swift`.
+
+**`tuist generate` no es opcional al crear o renombrar archivos.** La lista de archivos queda fijada en el `.xcodeproj`, así que un archivo nuevo no se compila y uno renombrado da `Build input file cannot be found`. El hook solo se dispara al tocar `Project.swift`; en los demás casos lo lanzas tú.
+
+Los diagnósticos de SourceKit en el editor se quedan atrás hasta esa regeneración: `Cannot find 'X' in scope` sobre código recién escrito suele ser eso y no un error real. **Manda `tuist xcodebuild build`**, no el subrayado rojo.
+
+`Tuist/Package.resolved` cambia su `originHash` al regenerar sin que se mueva ningún pin. Es ruido: fuera del commit salvo que cambie una versión de verdad.
+
+### Antes de dar una fase por terminada
+
+Además de build, tests y lint, dos comprobaciones que ninguna herramienta hace sola:
+
+```bash
+# cero colores literales fuera del design system
+grep -rn -E 'Color\(red:|\.foregroundColor|Color\.(gray|black|white|red|blue|green|primary|secondary)|Divider\(\)|\.shadow\(' \
+  --include='*.swift' Modules Apps | grep -v 'Sources/Tokens/Colors.swift'
+```
+
+Y pasar el agente `architecture-reviewer` sobre el diff. Encuentra cosas que el compilador no puede: duplicación real, una regla escrita en dos sitios con distinta letra, un test que no prueba lo que dice probar.
+
+Los recuentos de tests se dicen en **casos ejecutados y por módulo**, nunca en atributos `@Test` del repositorio entero: los tests parametrizados hacen que las dos cifras no se parezcan.
 
 ---
 
