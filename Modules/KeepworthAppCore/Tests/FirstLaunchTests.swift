@@ -1,3 +1,4 @@
+import Foundation
 import KeepworthDomain
 import KeepworthPersistence
 import Testing
@@ -21,9 +22,9 @@ private func inMemoryDependencies() throws -> Dependencies {
 func newLedgerComesBackSeeded() async throws {
     let dependencies = try inMemoryDependencies()
 
-    try await FirstLaunch.prepareIfNeeded(dependencies)
+    try await FirstLaunch.prepareIfNeeded(dependencies, locale: Locale(identifier: "es_ES"))
 
-    #expect(try await dependencies.settings.baseCurrency() != nil)
+    #expect(try await dependencies.settings.baseCurrency() == .eur)
     #expect(try await dependencies.accounts.accounts(ofKinds: [.asset]).count == 1)
     #expect(try await dependencies.accounts.accounts(ofKinds: [.expense]).count == 9)
     #expect(try await dependencies.accounts.accounts(ofKinds: [.income]).count == 3)
@@ -35,13 +36,13 @@ func newLedgerComesBackSeeded() async throws {
 @Test("Opening the app again does not seed a second time")
 func openingAgainDoesNotSeedTwice() async throws {
     let dependencies = try inMemoryDependencies()
-    try await FirstLaunch.prepareIfNeeded(dependencies)
+    try await FirstLaunch.prepareIfNeeded(dependencies, locale: Locale(identifier: "es_ES"))
     let everyKind = Set(AccountKind.allCases)
     let afterFirst = try await dependencies.accounts.accounts(ofKinds: everyKind).count
 
     // Without the guard this throws `SeedError.alreadySeeded`; with a broken guard it would
     // quietly double every category the user has.
-    try await FirstLaunch.prepareIfNeeded(dependencies)
+    try await FirstLaunch.prepareIfNeeded(dependencies, locale: Locale(identifier: "es_ES"))
 
     #expect(try await dependencies.accounts.accounts(ofKinds: everyKind).count == afterFirst)
 }
@@ -50,7 +51,7 @@ func openingAgainDoesNotSeedTwice() async throws {
 func seededNamesAreLocalised() async throws {
     let dependencies = try inMemoryDependencies()
 
-    try await FirstLaunch.prepareIfNeeded(dependencies)
+    try await FirstLaunch.prepareIfNeeded(dependencies, locale: Locale(identifier: "es_ES"))
 
     let names = try await dependencies.accounts.accounts(ofKinds: Set(AccountKind.allCases))
         .map(\.name)
@@ -60,9 +61,12 @@ func seededNamesAreLocalised() async throws {
     #expect(Set(names).count == names.count)
 }
 
-@Test("A device with no currency still gets one")
-func deviceWithNoCurrencyStillGetsOne() {
-    // Never throws and never returns nil: a device whose locale has no currency is still a
-    // device someone wants to track money on, and the choice is changeable later.
-    _ = FirstLaunch.currencyOfThisDevice()
+@Test("The currency comes from the device, and there is always one")
+func currencyComesFromTheDevice() {
+    #expect(FirstLaunch.currency(of: Locale(identifier: "es_ES")) == .eur)
+    #expect(FirstLaunch.currency(of: Locale(identifier: "en_US")) == .usd)
+    #expect(FirstLaunch.currency(of: Locale(identifier: "en_GB")) == .gbp)
+    // A locale with no currency at all still has to yield one: it is a device someone wants
+    // to track money on, and the choice is changeable later.
+    #expect(FirstLaunch.currency(of: Locale(identifier: "")) == .eur)
 }
