@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The six semantic colours, and the only ones the app is allowed to paint with.
+/// The seven semantic colours, and the only ones the app is allowed to paint with.
 ///
 /// They resolve from `Tokens.xcassets`, so each one carries its light and its dark variant and
 /// the system swaps them. A literal colour or a system colour anywhere outside this file is a
@@ -16,8 +16,8 @@ extension ShapeStyle where Self == Color {
     /// design does without.
     public static var surface: Color { token("surface") }
 
-    /// Text, and every amount that is not incoming. **Expenses use this, never red**: the app
-    /// does not tell the user off for spending.
+    /// Text, and any amount that neither comes in nor goes out — a positive balance, a figure
+    /// that is only a total.
     public static var ink: Color { token("ink") }
 
     /// Secondary text, captions and metadata.
@@ -28,6 +28,12 @@ extension ShapeStyle where Self == Color {
 
     /// Phosphor green. Interactive elements and money coming **in**. Nothing else.
     public static var accent: Color { token("accent") }
+
+    /// Money going **out**: expenses, negative balances, the spending total of a period.
+    ///
+    /// Built to mirror `accent` rather than to alarm — deep and desaturated in light, bright in
+    /// dark, the same way the green is. It marks direction, not blame.
+    public static var expense: Color { token("expense") }
 
     private static func token(_ name: String) -> Color {
         Color(name, bundle: .module)

@@ -1,33 +1,48 @@
 import SwiftUI
 
+/// Which way the money moved, which is the only thing that colours an amount.
+///
+/// An enum and not a pair of booleans: there are three cases, and `isIncoming: false` could
+/// never say whether a figure was an expense or simply a total.
+public enum AmountDirection {
+    /// Money coming in. Accent green.
+    case incoming
+    /// Money going out: an expense, a negative balance, what a period spent. Red.
+    case outgoing
+    /// Neither — a positive balance, a figure that is only a total. `ink`.
+    case neutral
+}
+
 /// One line of the ledger: what it is on the left, what it was worth on the right.
 ///
 /// The amount is monospaced so the decimal points line up down a column, which is what lets a
 /// list of figures be read without reading it.
 ///
-/// `isIncoming` is the one place the accent appears in a row. Everything else is `ink`,
-/// **expenses included**: the app does not paint spending red, because it is not there to tell
-/// the user off. A boolean parameter is usually a smell, but this one picks a colour rather
-/// than branching behaviour, and splitting the view in two would duplicate the whole layout.
+/// Colour marks **direction**, never judgement: green for what comes in, red for what goes out,
+/// `ink` for everything that is neither.
+///
+/// The sign is redundant with the colour on purpose, and the caller always includes it. Redundant
+/// so the figure survives being read in greyscale, by someone who cannot tell the two apart, or
+/// copied somewhere with no colour at all.
 public struct LedgerRow: View {
     private let title: String
     private let subtitle: String?
     private let symbolName: String?
     private let amount: String
-    private let isIncoming: Bool
+    private let direction: AmountDirection
 
     public init(
         title: String,
         subtitle: String? = nil,
         symbolName: String? = nil,
         amount: String,
-        isIncoming: Bool = false
+        direction: AmountDirection = .neutral
     ) {
         self.title = title
         self.subtitle = subtitle
         self.symbolName = symbolName
         self.amount = amount
-        self.isIncoming = isIncoming
+        self.direction = direction
     }
 
     public var body: some View {
@@ -62,7 +77,11 @@ public struct LedgerRow: View {
     }
 
     private var amountColor: Color {
-        isIncoming ? .accent : .ink
+        switch direction {
+        case .incoming: .accent
+        case .outgoing: .expense
+        case .neutral: .ink
+        }
     }
 }
 
@@ -82,7 +101,8 @@ private struct LedgerRowPreview: View {
                 title: "Mercadona",
                 subtitle: "Supermercado",
                 symbolName: "cart",
-                amount: "−42,30"
+                amount: "−42,30",
+                direction: .outgoing
             )
             Hairline()
             LedgerRow(
@@ -90,7 +110,7 @@ private struct LedgerRowPreview: View {
                 subtitle: "15 de enero",
                 symbolName: "arrow.down",
                 amount: "+2.100,00",
-                isIncoming: true
+                direction: .incoming
             )
         }
         .padding(.horizontal, Spacing.screenMargin)

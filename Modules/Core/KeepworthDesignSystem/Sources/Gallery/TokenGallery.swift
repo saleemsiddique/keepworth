@@ -1,6 +1,8 @@
 import SwiftUI
 
 /// Every colour token next to its name, so the palette can be checked in both themes at once.
+/// `accent` and `expense` sit last and adjacent on purpose: they are a pair, and the point is
+/// that neither shouts louder than the other.
 ///
 /// A development tool, not a screen. Its text is `Text(verbatim:)` and stays out of the String
 /// Catalog on purpose: token names are code, and translating them would make the gallery lie
@@ -13,6 +15,7 @@ public struct TokenGallery: View {
         ("inkSoft", .inkSoft),
         ("hairline", .hairline),
         ("accent", .accent),
+        ("expense", .expense),
     ]
 
     public init() {}

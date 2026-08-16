@@ -15,7 +15,7 @@ Se han corregido cifras que se venían arrastrando mal desde la Fase 1. La conve
 - Se dice **casos ejecutados**, no atributos `@Test` escritos. Un test parametrizado es una función y muchos casos, y `xcodebuild` cuenta los casos.
 - Se dice **de qué módulo**. El total del repositorio incluye los placeholders de Sync y AppCore, que no son de ninguna fase.
 
-Medido el 2026-08-15: 99 funciones `@Test` que expanden a **122 casos ejecutados** — Domain 90, Persistence 24, DesignSystem 6, y 1 placeholder en Sync y otro en AppCore.
+Medido el 2026-08-16: 99 funciones `@Test` que expanden a **123 casos ejecutados** — Domain 90, Persistence 24, DesignSystem 7, y 1 placeholder en Sync y otro en AppCore.
 
 ---
 
@@ -42,7 +42,7 @@ La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se habí
 
 La **Fase 1 (Dominio)** y la **Fase 2 (Persistencia)** están completadas y **mergeadas a `main`**: la primera el 2026-08-08 (PR #2), la segunda el 2026-08-13 (PR #4). Cómo quedó el dominio y por qué está en la sección 6 bis; las decisiones de persistencia, en la sección 9.
 
-La **Fase 3 (Design System)** está construida: build limpio, 122 casos de test en verde y lint limpio. Las decisiones que se tomaron al escribirla están en la sección 9.
+La **Fase 3 (Design System)** está construida: build limpio, 123 casos de test en verde y lint limpio. Las decisiones que se tomaron al escribirla están en la sección 9.
 
 Entre medias, el PR #3 reescribió los comentarios del código en inglés y los redujo. Esa convención ya es regla dura: **todo lo que va dentro de un archivo de código está en inglés** —comentarios, identificadores y nombres de test, en Swift y también en `Project.swift`, el CI, los entitlements y los hooks—, y el español se queda en la documentación y en la conversación. Está en `CLAUDE.md` § «Idioma del código», con sus dos excepciones.
 
@@ -499,7 +499,7 @@ La Fase 2 lo resolvió separando records y entidades: el record conforma `Fetcha
 
 ## 7. Design System
 
-Los seis tokens, definidos como Color Sets con variante clara y oscura. **Ninguna feature usa un color literal ni un color del sistema.**
+Los siete tokens, definidos como Color Sets con variante clara y oscura. **Ninguna feature usa un color literal ni un color del sistema.**
 
 | Token | Claro | Oscuro | Uso |
 |---|---|---|---|
@@ -508,9 +508,18 @@ Los seis tokens, definidos como Color Sets con variante clara y oscura. **Ningun
 | `ink` | `#141413` | `#F2F2EF` | Texto principal |
 | `inkSoft` | `#6E6E69` | `#8A8A85` | Texto secundario y metadatos |
 | `hairline` | `#E2E2DC` | `#232322` | Separadores de 0,5 pt |
-| `accent` | `#1E9E5A` | `#30D158` | Fósforo |
+| `accent` | `#1E9E5A` | `#30D158` | Fósforo: interactivo y dinero que entra |
+| `expense` | `#B3382C` | `#FF6B5E` | Dinero que sale |
 
-**Regla del acento**: el verde aparece únicamente en elementos interactivos y en dinero que **entra**. Los gastos van en `ink`. **Nunca rojo** — la app no regaña al usuario.
+### Regla del color en los importes
+
+**El color marca dirección, nunca juicio.** `accent` para el dinero que entra, `expense` para el que sale, `ink` para lo que no es ninguna de las dos: un saldo positivo, una cifra que solo es un total. El verde aparece además en los elementos interactivos.
+
+`expense` está construido para **espejar** a `accent`, no para alarmar: profundo y desaturado en claro, brillante en oscuro, igual que el verde. La idea es que ninguno grite más que el otro.
+
+> Esto sustituye a la regla anterior —«los gastos van en `ink`, nunca rojo, la app no regaña al usuario»—, revisada con el usuario el 2026-08-16 al ver la galería renderizada. El motivo del cambio: sin un antónimo del verde, la dirección del dinero solo se leía en el signo, y un gasto y un total del periodo se veían idénticos. Lo que se conserva de la intención original es el **tono**: el rojo elegido no es el rojo de alarma del sistema.
+
+**Todo importe lleva su signo**, aunque el color ya diga la dirección. La redundancia es deliberada: la cifra tiene que leerse igual en escala de grises, con daltonismo, o copiada a un sitio sin color. `−937,30` en rojo, `+2.100,00` en verde.
 
 ### Tipografía
 
@@ -668,18 +677,20 @@ Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero in
 
 ### Fase 3 — Design System — **construida (2026-08-15)**
 
-Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete componentes y dos galerías de previews: `TokenGallery` para la paleta y las voces, `ComponentGallery` para los componentes en contexto. Build sin warnings, 122 casos de test en verde y lint limpio.
+Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete componentes y dos galerías de previews: `TokenGallery` para la paleta y las voces, `ComponentGallery` para los componentes en contexto. Build sin warnings, 123 casos de test en verde y lint limpio.
 
 **Decisiones tomadas al escribirla:**
 
 - **Los tokens son Color Sets, no colores en código.** Es lo que ya decía este documento, y obligó a añadir un parámetro `resources:` opcional al helper `module()` de `Project.swift`. Opcional y no fijo para todos: un glob que no casa con nada hace fallar la generación, y `KeepworthDomain` no debe llevar recursos ni por accidente.
 - **`disableSynthesizedResourceAccessors: true` en el proyecto.** El accesor de assets que sintetiza Tuist **importa UIKit dentro del target dueño del catálogo**, y el design system solo puede importar SwiftUI. La opción quita ese accesor y conserva `Bundle.module`, que es solo Foundation y es todo lo que hace falta.
-- **Los tests del design system importan UIKit; el módulo no.** `Color("typo", bundle:)` nunca falla —devuelve un color de relleno—, así que un asset mal escrito se publicaría sin síntoma. `UIColor(named:in:compatibleWith:)` es la única API que admite no haberlo encontrado. Se comprueban las dos cosas por token: que está en el bundle y que sus valores claro y oscuro son los seis hex de la sección 7. Sin lo segundo, un Color Set sin variante oscura pasaría, porque resuelve al valor claro en los dos temas.
+- **Los tests del design system importan UIKit; el módulo no.** `Color("typo", bundle:)` nunca falla —devuelve un color de relleno—, así que un asset mal escrito se publicaría sin síntoma. `UIColor(named:in:compatibleWith:)` es la única API que admite no haberlo encontrado. Se comprueban tres cosas por token: que está en el bundle, que sus valores claro y oscuro son los hex de la sección 7, y que ninguno es translúcido. Sin la segunda, un Color Set sin variante oscura pasaría, porque resuelve al valor claro en los dos temas.
 - **Nada de formateo de dinero todavía.** Los componentes reciben un `String` ya formateado. El módulo no puede ver `Money`, y decidir dónde vive el formateador sin una sola pantalla delante sería inventarse el patrón. Se resuelve en la Fase 4.
 - **Las galerías viven en `Sources/`, no en un target de app aparte.** Cero fontanería en `Project.swift` y se abren desde el canvas de Xcode. Su texto va con `Text(verbatim:)` o como dato de ejemplo: son herramientas de desarrollo y **no entran en el String Catalog**.
 - **Las tipografías se construyen desde text styles, no desde tamaños fijos**, para que Dynamic Type funcione sin una línea extra en cada pantalla.
 - **`Spacing` nombra las medidas por lo que separan**, y solo están las que algún componente usa hoy. Una escala de tallas inventada para pantallas que no existen es justo lo que YAGNI prohíbe.
 - **`LedgerTabBar` es genérico sobre su tag**: no conoce los destinos de la app. Nombrarlos ahí metería la navegación dentro del design system.
+- **Un séptimo token, `expense`, y el fin de la regla «nunca rojo»** (2026-08-16, al revisar la galería renderizada). El razonamiento completo y el porqué está en la sección 7. Arrastró dos cosas: `LedgerRow.isIncoming` pasó a ser el `enum AmountDirection` —era exactamente el tercer caso que el contrato del módulo dejaba previsto—, y se fijó que **todo importe lleva signo** aunque el color ya diga la dirección.
+- **La galería agrupa las cuentas por banco**, con las hijas indentadas, como manda la sección 8. Estaba escrita como lista plana con el banco de subtítulo, que es justo lo que la decisión de agrupar existía para sustituir. La indentación la aplica quien llama: es el único sitio que anida filas, y abstraerlo con un solo uso sería inventarse el patrón.
 
 ### Fase 3.5 — Extracción de skills
 
@@ -754,7 +765,7 @@ Criterios de aceptación por fase:
 - **Entorno de IA** — editar un `.swift` deja el archivo formateado sin intervención; tocar `Project.swift` regenera el proyecto; el agente revisor detecta un `import GRDB` introducido a propósito dentro de una feature.
 - **Dominio** — un asiento cuyas líneas no suman cero es rechazado con error; un asiento de una sola línea es rechazado; sumar `Money` de divisas distintas falla en vez de aproximar; una cuenta de gasto o ingreso con banco es rechazada; el patrimonio neto es correcto mezclando activo y pasivo, y **no varía** al crear, renombrar o archivar una categoría; el `netWorthChange` del informe coincide al céntimo con la variación del patrimonio en el periodo, **también cuando dentro de él se declara el saldo inicial de una cuenta nueva**.
 - **Persistencia** — crear y editar cuentas y movimientos sobre base de datos en memoria; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone. El criterio de **borrado** —marca `deleted_at` y la fila desaparece de las consultas— se verifica en la Fase 4, que es donde se implementa.
-- **Design System** — cada uno de los seis tokens está en el bundle y resuelve a sus dos valores documentados; `ComponentGallery` revisada en claro y oscuro; y `grep` de colores literales (`Color(red:`, `Color.gray`, `.foregroundColor`…) sin un solo resultado fuera de `Colors.swift`. Esa última es la comprobación mecánica de «cero colores literales fuera del design system», y conviene repetirla en cada fase de UI.
+- **Design System** — cada uno de los siete tokens está en el bundle y resuelve a sus dos valores documentados; `ComponentGallery` revisada en claro y oscuro; y `grep` de colores literales (`Color(red:`, `Color.gray`, `.foregroundColor`…) sin un solo resultado fuera de `Colors.swift`. Esa última es la comprobación mecánica de «cero colores literales fuera del design system», y conviene repetirla en cada fase de UI.
 - **UI** — galería de previews revisada en tema claro y oscuro; recorrido manual en simulador de crear cuenta → registrar gasto → verlo en Resumen y en Movimientos → editarlo → borrarlo, con el patrimonio actualizándose en cada paso.
 - **Import/Export** — exportar, borrar la base de datos, reimportar, y comprobar que el patrimonio y el número de movimientos coinciden exactamente.
 - **Sync** — dos simuladores con la misma cuenta de iCloud; un cambio en uno aparece en el otro; editar el mismo movimiento en ambos resuelve sin duplicar ni perder datos.

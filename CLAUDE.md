@@ -64,8 +64,10 @@ Los bancos sí son entidad propia (`Institution`): agrupan cuentas y dan un tota
 
 ### Diseño
 
-- **Cero colores literales fuera de `KeepworthDesignSystem`.** Solo los seis tokens semánticos: `bg`, `surface`, `ink`, `inkSoft`, `hairline`, `accent`.
-- El acento verde aparece únicamente en elementos interactivos y en dinero que entra. **Los gastos van en `ink`, nunca en rojo** — la app no regaña al usuario.
+- **Cero colores literales fuera de `KeepworthDesignSystem`.** Solo los siete tokens semánticos: `bg`, `surface`, `ink`, `inkSoft`, `hairline`, `accent`, `expense`.
+- **El color de un importe marca dirección, nunca juicio**: `accent` para el dinero que entra, `expense` para el que sale, `ink` para lo que no es ninguna de las dos cosas —un saldo positivo, una cifra que solo es un total—. El verde aparece además en los elementos interactivos.
+- `expense` está construido para espejar a `accent`, no para alarmar: profundo y desaturado en claro, brillante en oscuro, igual que el verde. Ninguno de los dos grita más que el otro.
+- **Todo importe lleva su signo**, aunque el color ya diga la dirección. La redundancia es deliberada: la cifra tiene que leerse igual en escala de grises, con daltonismo o copiada a un sitio sin color.
 - Sin tarjetas ni sombras: la jerarquía se construye con espacio en blanco y hairlines de 0,5 pt.
 - Los importes usan SF Mono con `.monospacedDigit()`.
 - Una acción primaria por pantalla; el resto vive en gestos nativos.

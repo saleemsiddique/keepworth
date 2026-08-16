@@ -10,7 +10,7 @@ Tampoco tiene String Catalog ni debe tenerlo: no sabe en qué idioma está la pa
 
 **Expone**: tokens, tipografía, espaciado, los siete componentes y las dos galerías.
 
-## Los seis tokens
+## Los siete tokens
 
 Viven en `Resources/Tokens.xcassets` como Color Sets con variante clara y oscura, y se exponen en `Sources/Tokens/Colors.swift` como extensión de `ShapeStyle where Self == Color`, para que se lean como los de SwiftUI: `.foregroundStyle(.ink)`, `.background(.bg)`.
 
@@ -23,9 +23,14 @@ Viven en `Resources/Tokens.xcassets` como Color Sets con variante clara y oscura
 | `ink` | `#141413` | `#F2F2EF` | Texto principal |
 | `inkSoft` | `#6E6E69` | `#8A8A85` | Texto secundario y metadatos |
 | `hairline` | `#E2E2DC` | `#232322` | Separadores de 0,5 pt |
-| `accent` | `#1E9E5A` | `#30D158` | Fósforo |
+| `accent` | `#1E9E5A` | `#30D158` | Fósforo: interactivo y dinero que entra |
+| `expense` | `#B3382C` | `#FF6B5E` | Dinero que sale |
 
-**Regla del acento**: el verde aparece solo en elementos interactivos y en dinero que **entra**. Los gastos van en `ink`. **Nunca rojo**: la app no regaña al usuario.
+**Regla del color en los importes**: marca **dirección, nunca juicio**. `accent` para lo que entra, `expense` para lo que sale, `ink` para lo que no es ninguna de las dos —un saldo positivo, una cifra que solo es un total—. El verde aparece además en los elementos interactivos.
+
+`expense` espeja a `accent` en construcción: profundo y desaturado en claro, brillante en oscuro. **No es el rojo de alarma del sistema**, y esa contención es el punto: ninguno de los dos grita más que el otro.
+
+**Todo importe lleva su signo**, aunque el color ya diga la dirección. Redundante a propósito: la cifra debe leerse igual en escala de grises, con daltonismo o copiada a un sitio sin color.
 
 ### Por qué hay recursos aquí y en ningún otro módulo
 
@@ -64,7 +69,7 @@ Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso. Todas se c
 | `Hairline` | `Hairline()` |
 | `SectionCaption` | `SectionCaption(_ text: String)` |
 | `HeadlineAmount` | `init(caption: String, amount: String, detail: String? = nil)` |
-| `LedgerRow` | `init(title: String, subtitle: String? = nil, symbolName: String? = nil, amount: String, isIncoming: Bool = false)` |
+| `LedgerRow` | `init(title: String, subtitle: String? = nil, symbolName: String? = nil, amount: String, direction: AmountDirection = .neutral)` |
 | `PrimaryAction` | `init(_ title: String, action: @escaping () -> Void)` |
 | `EmptyStateLine` | `EmptyStateLine(_ text: String)` |
 | `LedgerTabBar` | `init(selection: Binding<Tag>, leading: LedgerTabItem<Tag>, trailing: LedgerTabItem<Tag>, centerLabel: String, centerAction: @escaping () -> Void)` |
@@ -76,7 +81,7 @@ Dos decisiones que conviene no reabrir por costumbre:
 - **`HeadlineAmount` no se oculta a sí mismo.** El tap que redacta el patrimonio es estado de una pantalla, así que quien llama es quien aplica `.redacted(reason: .placeholder)`.
 - **`LedgerTabBar` es genérico sobre su tag.** No conoce los destinos de la app: nombrarlos aquí metería la navegación dentro del design system, y las dos cosas crecen a ritmos distintos.
 
-`LedgerRow.isIncoming` es el único flag booleano del módulo. Se acepta porque elige un color, no bifurca comportamiento, y partir la vista en dos duplicaría el layout entero. **Si aparece un tercer caso, se sustituye por un `enum`** — no se añade un segundo booleano.
+`LedgerRow` empezó con un `isIncoming: Bool`, y al añadirse el token `expense` apareció el tercer caso que el propio contrato preveía. Hoy es `AmountDirection` —`.incoming`, `.outgoing`, `.neutral`—, y **el módulo no tiene ningún flag booleano**. Que siga así.
 
 ## Verificación
 
@@ -93,7 +98,7 @@ Es una excepción deliberada y acotada al target de tests. El contrato de arriba
 Los tests comprueban tres cosas por token, y cada una tapa un fallo silencioso distinto:
 
 1. **Que está en el bundle** — un nombre mal escrito o un recurso no empaquetado.
-2. **Que sus valores claro y oscuro son los seis hex documentados** — sin esto, un Color Set al que le falte la variante oscura pasaría: resuelve al valor claro en los dos temas.
+2. **Que sus valores claro y oscuro son los hex documentados** — sin esto, un Color Set al que le falte la variante oscura pasaría: resuelve al valor claro en los dos temas.
 3. **Que el alfa es 1 en ambos** — un `"alpha": "0.500"` colado en un `Contents.json` pasa las dos anteriores y no se nota hasta que el color está encima de otra cosa.
 
 No hay tests de snapshot: meterían una dependencia externa, y solo GRDB está aprobada.

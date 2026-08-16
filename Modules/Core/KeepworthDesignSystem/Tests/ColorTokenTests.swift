@@ -25,6 +25,7 @@ let colorTokens = [
     ColorToken(name: "inkSoft", light: 0x6E_6E69, dark: 0x8A_8A85),
     ColorToken(name: "hairline", light: 0xE2_E2DC, dark: 0x23_2322),
     ColorToken(name: "accent", light: 0x1E_9E5A, dark: 0x30_D158),
+    ColorToken(name: "expense", light: 0xB3_382C, dark: 0xFF_6B5E),
 ]
 
 @Test("Every colour token ships and resolves to its documented values", arguments: colorTokens)
