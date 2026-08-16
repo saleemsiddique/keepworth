@@ -35,6 +35,22 @@ struct EntryRecord: Codable, FetchableRecord, PersistableRecord {
         self.updatedAt = updatedAt
         self.deletedAt = timestamps.deletedAt
     }
+
+    /// Takes the lines rather than reading them, so the caller fetches every entry's lines in
+    /// one query instead of one per entry.
+    ///
+    /// Goes through `Entry.init`, which is the whole point: a stored entry whose lines no
+    /// longer sum to zero is rejected on read instead of reaching a screen. That is also why
+    /// `lines` must be **all** of them — handing over a subset would fail a valid entry.
+    func toDomain(lines: [EntryLine]) throws -> Entry {
+        try Entry(
+            id: try EntryID(decoding: id, table: Self.databaseTableName),
+            occurredOn: try CalendarDate(iso8601: occurredOn),
+            payee: payee,
+            note: note,
+            lines: lines
+        )
+    }
 }
 
 /// A row of `entry_line`.

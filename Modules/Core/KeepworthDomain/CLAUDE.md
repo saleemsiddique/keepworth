@@ -11,9 +11,14 @@ Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta cap
 **Expone**:
 - Entidades: `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine`.
 - Tipos de apoyo: `CalendarDate` —fecha sin hora ni zona, la de `occurredOn`— e `Identifier<T>`, que da `AccountID`, `EntryID`, `InstitutionID` y `EntryLineID`.
-- Protocolos de repositorio: `InstitutionRepository`, `AccountRepository`, `EntryRepository`, `SettingsRepository`, con `EntryLineQuery` como única forma de pedir líneas. Definidos aquí, implementados en `KeepworthPersistence`.
+- Protocolos de repositorio: `InstitutionRepository`, `AccountRepository`, `EntryRepository`, `SettingsRepository`. Definidos aquí, implementados en `KeepworthPersistence`.
+- Dos formas de preguntar por movimientos, y no son intercambiables: `EntryLineQuery` pregunta **cuánto suman** unas cuentas y responde con patas sueltas; `EntryQuery` pregunta **qué pasó** y responde con asientos enteros.
 - Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
 - Errores de dominio descriptivos, nunca `nil` para señalar fallo.
+
+**No existe un `Entry` parcial.** `Entry.init` valida que las líneas sumen cero, así que leer un asiento es leerlo entero. De ahí sale la regla menos obvia de `EntryQuery`: filtrar por cuenta elige **qué asientos**, nunca qué líneas. Un gasto tiene una pata en la cuenta y otra en la categoría, y devolver solo la que casa con el filtro produce un asiento que no cuadra y que el init rechaza.
+
+`EntryQuery.limit` es **obligatorio**, por lo mismo que `EntryLineQuery.accountIDs` no admite «todas»: una consulta sin techo sobre un historial largo es la que no queremos que nadie escriba por descuido. Un límite de cero o negativo lanza, y no por purismo — SQLite interpreta un `LIMIT` negativo como «sin límite», así que dejarlo pasar convertiría la defensa en su contrario.
 
 `Entry.twoLine` es **interno a propósito**: construir un movimiento pasa siempre por un caso de uso, que es quien valida los tipos de cuenta. Si una pantalla necesita un movimiento que hoy no existe, se añade un caso de uso, no se abre el constructor.
 
