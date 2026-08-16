@@ -1,6 +1,44 @@
+import Foundation
 import Testing
 
 @testable import KeepworthDomain
+
+/// The double of `LedgerChanges`. Repositories hold one and ring it on every write, the way
+/// SQLite's observation fires because the file changed rather than because a particular
+/// repository asked it to.
+///
+/// A lock and not an actor: registering a listener has to happen **before** `changes()`
+/// returns. Deferring it to a `Task` would let a test write between subscribing and being
+/// subscribed, and lose the notification it was waiting for — a flaky test that looks like a
+/// bug in the code under test.
+final class InMemoryLedgerChanges: LedgerChanges, @unchecked Sendable {
+    private let lock = NSLock()
+    private var listeners: [UUID: AsyncThrowingStream<Void, any Error>.Continuation] = [:]
+
+    func changes() -> AsyncThrowingStream<Void, any Error> {
+        // One slot, matching `SQLiteLedgerChanges`: two signals say the same thing as one.
+        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let id = UUID()
+            lock.withLock { listeners[id] = continuation }
+            // Strong `self`, matching `SQLiteLedgerChanges`, where it is load-bearing: there
+            // the stream has to keep the database observation alive. The retain ends when the
+            // last listener does.
+            continuation.onTermination = { [self] _ in
+                lock.withLock { _ = listeners.removeValue(forKey: id) }
+            }
+        }
+    }
+
+    func notify() {
+        // Copied out of the lock before use. `NSLock` is not reentrant, and a listener
+        // released while the array is walked runs its `onTermination`, which takes this same
+        // lock.
+        let current = lock.withLock { Array(listeners.values) }
+        for listener in current {
+            listener.yield()
+        }
+    }
+}
 
 /// In-memory doubles of the repository protocols.
 ///
@@ -11,9 +49,11 @@ import Testing
 /// Actors because they now store writes, and the domain compiles under strict concurrency.
 actor InMemoryInstitutionRepository: InstitutionRepository {
     private(set) var institutions: [Institution]
+    private let changes: InMemoryLedgerChanges?
 
-    init(_ institutions: [Institution] = []) {
+    init(_ institutions: [Institution] = [], changes: InMemoryLedgerChanges? = nil) {
         self.institutions = institutions
+        self.changes = changes
     }
 
     func institution(withID id: InstitutionID) async throws -> Institution {
@@ -33,14 +73,17 @@ actor InMemoryInstitutionRepository: InstitutionRepository {
         } else {
             institutions.append(institution)
         }
+        changes?.notify()
     }
 }
 
 actor InMemoryAccountRepository: AccountRepository {
     private(set) var accounts: [Account]
+    private let changes: InMemoryLedgerChanges?
 
-    init(_ accounts: [Account] = []) {
+    init(_ accounts: [Account] = [], changes: InMemoryLedgerChanges? = nil) {
         self.accounts = accounts
+        self.changes = changes
     }
 
     func account(withID id: AccountID) async throws -> Account {
@@ -64,6 +107,7 @@ actor InMemoryAccountRepository: AccountRepository {
         } else {
             accounts.append(account)
         }
+        changes?.notify()
     }
 
     func archive(_ id: AccountID) async throws {
@@ -90,8 +134,10 @@ actor InMemoryEntryRepository: EntryRepository {
     /// production, and a feature test would prove a first row the user never sees.
     private var savedOrder: [EntryID: Int] = [:]
     private var nextSavedOrder = 0
+    private let changes: InMemoryLedgerChanges?
 
-    init(_ entries: [Entry] = []) {
+    init(_ entries: [Entry] = [], changes: InMemoryLedgerChanges? = nil) {
+        self.changes = changes
         self.savedEntries = entries
         for entry in entries {
             savedOrder[entry.id] = nextSavedOrder
@@ -113,6 +159,7 @@ actor InMemoryEntryRepository: EntryRepository {
             savedOrder[entry.id] = nextSavedOrder
             nextSavedOrder += 1
         }
+        changes?.notify()
     }
 
     /// Unordered, unlike the SQLite one. Deliberate: every caller of this method sums what it
@@ -153,16 +200,22 @@ actor InMemoryEntryRepository: EntryRepository {
 
 actor InMemorySettingsRepository: SettingsRepository {
     private var storedBaseCurrency: CurrencyCode?
+    private let changes: InMemoryLedgerChanges?
 
-    init(baseCurrency: CurrencyCode? = nil) {
+    init(baseCurrency: CurrencyCode? = nil, changes: InMemoryLedgerChanges? = nil) {
         self.storedBaseCurrency = baseCurrency
+        self.changes = changes
     }
 
     func baseCurrency() async throws -> CurrencyCode? {
         storedBaseCurrency
     }
 
+    /// Rings the signal like the other three. In SQLite this is an `UPDATE` on `app_setting`,
+    /// which falls inside the observed region — and it is the write with the widest reach in
+    /// the app, because changing the base currency changes every figure on every screen.
     func setBaseCurrency(_ currency: CurrencyCode) async throws {
         storedBaseCurrency = currency
+        changes?.notify()
     }
 }
