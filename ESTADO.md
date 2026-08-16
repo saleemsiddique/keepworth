@@ -4,9 +4,9 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-16 — **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-16 — **Fase 3 (Design System) mergeada a `main`** (PR #5) y **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
-**Siguiente paso: Fase 3.5 (extracción de skills).**
+**Siguiente paso: Fase 4 (Resumen y Movimientos), que empieza decidiendo cómo se leen los asientos.**
 
 ### Cómo se cuentan los tests en este documento
 
@@ -53,7 +53,7 @@ La **Fase 3 (Design System)** está construida: build limpio, 123 casos de test 
 
 Entre medias, el PR #3 reescribió los comentarios del código en inglés y los redujo. Esa convención ya es regla dura: **todo lo que va dentro de un archivo de código está en inglés** —comentarios, identificadores y nombres de test, en Swift y también en `Project.swift`, el CI, los entitlements y los hooks—, y el español se queda en la documentación y en la conversación. Está en `CLAUDE.md` § «Idioma del código», con sus dos excepciones.
 
-**La siguiente fase por empezar es la 3.5 (extracción de skills).**
+**La siguiente fase por empezar es la 4 (Resumen y Movimientos).** Arranca por un bloqueante de dominio: hoy no hay forma de leer un `Entry`.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -70,6 +70,9 @@ mise.toml                                    versiones de tuist y xcbeautify
 .claude/hooks/format-swift.sh                formatea Swift tras cada edición
 .claude/hooks/regenerate-tuist.sh            regenera el proyecto al tocar Project.swift
 .claude/agents/architecture-reviewer.md      agente auditor (model: opus)
+.claude/skills/declare-module/            declarar un módulo en Project.swift
+.claude/skills/add-component/            añadir un componente al design system
+.claude/skills/add-color-token/          añadir o cambiar un token de color
 
 .github/workflows/ci.yml                     build + test + lint en runner macOS
 
@@ -89,7 +92,7 @@ El `SyncModule.swift` que queda en Sync es **andamiaje deliberado**: existe solo
 
 - `Modules/Features/` — se crea en la Fase 4.
 - `Apps/KeepworthWidgets/` — se crea en la Fase 7. Se dejó fuera a propósito: declararlo ahora obligaría a escribir un `WidgetBundle` placeholder inservible.
-- Skills en `.claude/skills/` — se extraen en la Fase 3.5, con ejemplos reales del repo. Escribirlas antes sería codificar procedimientos imaginados.
+- Las skills de **crear una feature** y **añadir una migración** — aplazadas a la Fase 4.5 por falta de instancias reales; el razonamiento está en la sección 9. Las tres que sí tenían evidencia están escritas en `.claude/skills/`.
 
 ---
 
@@ -716,17 +719,38 @@ Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete compone
 - **Un séptimo token, `expense`, y el fin de la regla «nunca rojo»** (2026-08-16, al revisar la galería renderizada). El razonamiento completo y el porqué está en la sección 7. Arrastró dos cosas: `LedgerRow.isIncoming` pasó a ser el `enum AmountDirection` —era exactamente el tercer caso que el contrato del módulo dejaba previsto—, y se fijó que **todo importe lleva signo** aunque el color ya diga la dirección.
 - **La galería agrupa las cuentas por banco**, con las hijas indentadas, como manda la sección 8. Estaba escrita como lista plana con el banco de subtítulo, que es justo lo que la decisión de agrupar existía para sustituir. La indentación la aplica quien llama: es el único sitio que anida filas, y abstraerlo con un solo uso sería inventarse el patrón.
 
-### Fase 3.5 — Extracción de skills
+### Fase 3.5 — Extracción de skills — **hecha a medias a propósito (2026-08-16)**
 
-**Punto de parada deliberado.** Con dominio, persistencia y design system construidos, los patrones que se repiten son observables en lugar de imaginados. Se extraen las skills citando archivos reales del repo:
+**Punto de parada deliberado.** La fase se justificaba en que los patrones que se repiten fueran **observables en lugar de imaginados**. Al ir a escribirla se contrastó su propia lista contra el repositorio, y solo tres de las cinco lo eran:
 
-- declarar un módulo nuevo en `Project.swift`, con o sin `resourceGlobs:`
-- añadir una migración GRDB
-- crear una feature con su modelo observable y sus previews
-- añadir un componente al design system, con sus previews en ambos temas
-- añadir un token de color: catálogo, `Colors.swift`, test, `TokenGallery` y las tres tablas de la documentación — cinco sitios que hoy hay que acordarse de tocar a mano
+| Skill | Instancias reales | |
+|---|---|---|
+| Declarar un módulo en `Project.swift` | 5 módulos, uno con `resourceGlobs:` | **escrita** |
+| Añadir un componente al design system | 7 componentes de forma idéntica | **escrita** |
+| Añadir un token de color | 7 tokens, el séptimo tocando 5 sitios | **escrita** |
+| Añadir una migración GRDB | 1 — solo `v1.initialSchema` | aplazada |
+| Crear una feature con modelo observable | 0 — `Modules/Features/` no existe | aplazada |
 
-Y se endurece el `CLAUDE.md` raíz con lo que haya fallado en las fases 1 a 3.
+Escribir las dos últimas ahora habría sido exactamente el patrón imaginado que la fase existía para evitar. **Se aplazan a una Fase 4.5**, cuando haya dos features y una segunda migración: la parte interesante de migrar —nunca editar una publicada, aplicar sobre una base con datos— no se ha ejercitado todavía ni una vez.
+
+Las tres escritas están en `.claude/skills/{declare-module,add-component,add-color-token}/SKILL.md`. Siguen la convención de `.claude/agents/`: **nombre en inglés, contenido en español**.
+
+**El reparto entre `CLAUDE.md` y las skills**, decidido con el usuario:
+
+| | `CLAUDE.md` | Skill |
+|---|---|---|
+| Contiene | reglas e invariantes: qué está prohibido y por qué | procedimientos: los pasos en orden, con los archivos que hay que tocar |
+| Se lee | siempre | solo cuando la tarea lo pide |
+
+Una regla vive en **un solo sitio autoritativo**; la skill no la repite, la enlaza. Es la misma disciplina que la sección «Cambiar una decisión» del `CLAUDE.md` raíz.
+
+**Lo que se añadió al `CLAUDE.md` raíz**, todo salido de fallos reales de las fases 1 a 3:
+
+- Un archivo bajo `Modules/` sin target declarado esquiva la validación entera; target y primer `.swift` van en el mismo commit.
+- Las dos excepciones a la ley de capas, que estaban solo en la cabeza del agente revisor.
+- La sección **«Cambiar una decisión»**: los cinco archivos que hay que recorrer, y los dos hábitos que salen de haberlo hecho mal —enunciar el criterio en vez de ejemplos, y que dos documentos que dicen lo mismo lo digan con las mismas palabras—. El detonante fue el token `expense`: cambiar la regla del color obligó a tocar cuatro documentos, y el agente revisor se quedó viejo hasta el punto de que habría denunciado el diseño correcto.
+- Las trampas de verificación que costaron tiempo: el `PATH` de los shims de `mise`, que `tuist generate` no es opcional al crear o renombrar archivos, que los diagnósticos de SourceKit van por detrás del build, el ruido del `originHash` de `Package.resolved`, y que los recuentos de tests se dicen en casos ejecutados y por módulo.
+- La estrategia de merge: commit de merge, sin squash y sin borrar la rama.
 
 ### Fase 4 — Resumen y Movimientos
 
