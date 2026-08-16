@@ -83,7 +83,7 @@ let coreModules: [Target] =
             .target(name: "KeepworthPersistence"),
         ]
     )
-    // The only module with resources: the six semantic colours live in an asset catalog so
+    // The only module with resources: the seven semantic colours live in an asset catalog so
     // they carry a light and a dark variant.
     + module(
         name: "KeepworthDesignSystem",

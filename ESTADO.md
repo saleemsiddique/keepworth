@@ -4,7 +4,7 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-15 — **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-16 — **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
 **Siguiente paso: Fase 3.5 (extracción de skills).**
 
@@ -31,6 +31,13 @@ Gratuita por ahora. Construida asumiendo escala real (millones de usuarios) y co
 https://claude.ai/code/artifact/fc6c746d-92e4-408e-bc33-32786328d709
 
 (El artefacto usa el nombre provisional "WalletOS". El nombre definitivo es **Keepworth**.)
+
+Dos avisos sobre ese artefacto, que es anterior al código y ya no manda en todo:
+
+- **En color manda la sección 7**, no el artefacto. Está dibujado sin el token `expense`, con los gastos en `ink`, que es la regla que se sustituyó el 2026-08-16.
+- **En importes manda la sección 8**: el artefacto los dibuja sin signo, y hoy todo importe con dirección lo lleva.
+
+Para lo demás —composición, espacio en blanco, jerarquía, tono general— sigue siendo la referencia.
 
 ---
 
@@ -511,23 +518,25 @@ Los siete tokens, definidos como Color Sets con variante clara y oscura. **Ningu
 | `accent` | `#1E9E5A` | `#30D158` | Fósforo: interactivo y dinero que entra |
 | `expense` | `#B3382C` | `#FF6B5E` | Dinero que sale |
 
+> El token `expense` **no tiene nada que ver con `AccountKind.expense`** de la sección 6, aunque compartan palabra. El token pinta la **dirección de un importe**; el `kind` dice qué es una cuenta. Una línea contra una categoría de gasto puede perfectamente ir en `accent`: si estás corrigiendo un gasto, ese dinero vuelve.
+
 ### Regla del color en los importes
 
-**El color marca dirección, nunca juicio.** `accent` para el dinero que entra, `expense` para el que sale, `ink` para lo que no es ninguna de las dos: un saldo positivo, una cifra que solo es un total. El verde aparece además en los elementos interactivos.
+**El color marca dirección, nunca juicio.** `accent` cuando el dinero **entra**, `expense` cuando **sale o se debe** —un gasto, un saldo negativo, el total gastado de un periodo—, e `ink` en **todo lo demás**, incluidos los saldos positivos y las cifras derivadas como lo ahorrado. El verde aparece además en los elementos interactivos.
 
 `expense` está construido para **espejar** a `accent`, no para alarmar: profundo y desaturado en claro, brillante en oscuro, igual que el verde. La idea es que ninguno grite más que el otro.
 
 > Esto sustituye a la regla anterior —«los gastos van en `ink`, nunca rojo, la app no regaña al usuario»—, revisada con el usuario el 2026-08-16 al ver la galería renderizada. El motivo del cambio: sin un antónimo del verde, la dirección del dinero solo se leía en el signo, y un gasto y un total del periodo se veían idénticos. Lo que se conserva de la intención original es el **tono**: el rojo elegido no es el rojo de alarma del sistema.
 
-**Todo importe lleva su signo**, aunque el color ya diga la dirección. La redundancia es deliberada: la cifra tiene que leerse igual en escala de grises, con daltonismo, o copiada a un sitio sin color. `−937,30` en rojo, `+2.100,00` en verde.
+**Lleva signo todo importe que sea negativo o que tenga dirección**; un saldo positivo no lleva ninguno. Se pone aunque el color ya diga lo mismo: la redundancia es deliberada, para que la cifra se lea igual en escala de grises, con daltonismo, o copiada a un sitio sin color. `−937,30` en rojo, `+2.100,00` en verde, `20.500,00` a secas en `ink`.
 
 ### Tipografía
 
 Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso.
 
-- **Importes**: SF Mono semibold con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse.
+- **Importes**: SF Mono con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse. Semibold en la cifra grande de cabecera; peso normal en las de fila, que si no una columna entera de importes pesa demasiado.
 - **Títulos y texto**: SF Pro.
-- **Metadatos y etiquetas**: SF Pro 11–13 pt, mayúsculas, tracking amplio.
+- **Metadatos y etiquetas**: SF Pro pequeño —el text style `.caption`, que escala con Dynamic Type—, mayúsculas y tracking amplio.
 
 ### Contrato de cada pantalla
 
@@ -568,8 +577,8 @@ Dos destinos en la barra inferior con el botón de añadir en el **centro exacto
 │   Cartera  3.000,00 │
 │ ─────────────────── │
 │ ESTE MES            │
-│ Gastado     937,30  │
-│ Ahorrado  1.162,70 ›│
+│ Gastado    −937,30  │
+│ Ahorrado +1.162,70 ›│
 │ ─────────────────── │
 │ RECIENTE            │
 │ Mercadona   −42,30  │
@@ -578,24 +587,35 @@ Dos destinos en la barra inferior con el botón de añadir en el **centro exacto
 └─────────────────────┘
 ```
 
+Tres cosas distintas conviven en esa pantalla, y conviene no confundirlas:
+
+- **Saldos positivos** (`BBVA 20.500,00`, `Nómina 1.200,00`): un estado, no un movimiento. Sin signo y en `ink`.
+- **Saldos negativos** (`Visa −320,45`): llevan su menos y van en `expense`. Es una deuda, y entre saldos positivos en `ink` se pasaría por alto justo lo que resta del patrimonio.
+- **Dinero que se mueve** (`Mercadona −42,30`): signo y color, `expense` al salir y `accent` al entrar.
+- **`Gastado` y `Ahorrado`**: llevan signo porque tienen dirección, pero solo `Gastado` va en `expense`. **`Ahorrado` va en `ink`**: es una cifra derivada, no dinero que haya entrado de ningún sitio. Pintarla de verde diría que has ingresado 1.162,70, y no es cierto.
+
+Resumido, y en este orden: **el signo aparece cuando la cifra es negativa o tiene dirección**; un saldo positivo no lleva ninguno. **El color lo pone `expense` cuando el dinero sale o se debe, `accent` cuando entra, e `ink` en todo lo demás** — incluida una cifra derivada como lo ahorrado.
+
 Al tocar el bloque «Este mes» se empuja el informe, que es una pantalla de detalle y no un destino de la barra:
 
 ```
 ┌─────────────────────┐
 │ ‹ Enero 2026 ›    ≡ │
 │ ─────────────────── │
-│ INGRESOS  2.100,00  │
-│   Nómina  2.100,00  │
+│ INGRESOS +2.100,00  │
+│   Nómina +2.100,00  │
 │ ─────────────────── │
-│ GASTOS      937,30  │
-│   Vivienda  800,00  │
-│   Transporte 60,00  │
-│   Supermerc. 42,30  │
-│   Restaur.   35,00  │
+│ GASTOS     −937,30  │
+│   Vivienda −800,00  │
+│   Transport −60,00  │
+│   Supermerc −42,30  │
+│   Restaur.  −35,00  │
 │ ─────────────────── │
-│ AHORRADO  1.162,70  │
+│ AHORRADO +1.162,70  │
 └─────────────────────┘
 ```
+
+Aquí sí: los ingresos en `accent`, los gastos en `expense`, y `AHORRADO` en `ink` por lo mismo que en Resumen — es la resta de los dos, no dinero que haya entrado.
 
 El informe y el patrimonio no pueden contradecirse: lo ahorrado en el periodo es exactamente lo que varió el patrimonio en él.
 
@@ -641,7 +661,9 @@ Proyecto generado, build en verde, los cinco tests placeholder pasando, lint lim
 
 `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine` y las reglas de balance. Protocolos `InstitutionRepository`, `AccountRepository` y `EntryRepository`. Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
 
-70 tests en verde, lint limpio y el revisor de arquitectura sin hallazgos. `DomainModule.swift` eliminado. El único `import` de toda la capa es `Foundation` en `Identifier.swift`, y está solo por `UUID`.
+Lint limpio y el revisor de arquitectura sin hallazgos. `DomainModule.swift` eliminado. El único `import` de toda la capa es `Foundation` en `Identifier.swift`, y está solo por `UUID`.
+
+> El PR #2 anotó «70 tests en verde». Era el total del repositorio contando atributos `@Test`, no casos del módulo: la convención de arriba llegó después. La cifra vigente de Domain está en la cabecera.
 
 `SetOpeningBalance` no estaba en el plan original y se añadió al revisar: sin él no había forma de dar de alta una cuenta con su saldo de partida sin componer líneas a mano desde la UI, que es justo lo que el contrato del módulo prohíbe.
 
@@ -659,7 +681,9 @@ Proyecto generado, build en verde, los cinco tests placeholder pasando, lint lim
 
 Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero indicada arriba. Migración `v1` con el esquema entero de la sección 6, incluidas la vista `live_entry_line` y los índices parciales. Records GRDB y las cuatro implementaciones de repositorio, **sin un solo tipo de GRDB en la API pública**. Tests contra base de datos en memoria.
 
-99 tests en verde y lint limpio.
+Lint limpio.
+
+> El PR #4 anotó «99 tests en verde», y también era el total del repositorio en atributos `@Test`, no casos de Persistence. La cifra vigente está en la cabecera.
 
 **Decisiones tomadas al escribirla:**
 
@@ -681,7 +705,7 @@ Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete compone
 
 **Decisiones tomadas al escribirla:**
 
-- **Los tokens son Color Sets, no colores en código.** Es lo que ya decía este documento, y obligó a añadir un parámetro `resources:` opcional al helper `module()` de `Project.swift`. Opcional y no fijo para todos: un glob que no casa con nada hace fallar la generación, y `KeepworthDomain` no debe llevar recursos ni por accidente.
+- **Los tokens son Color Sets, no colores en código.** Es lo que ya decía este documento, y obligó a añadir `resourceGlobs:` al helper `module()` de `Project.swift`, relativo al `path` del módulo. Por defecto vacío y no fijo para todos: un glob que no casa con nada hace fallar la generación, y `KeepworthDomain` no debe llevar recursos ni por accidente.
 - **`disableSynthesizedResourceAccessors: true` en el proyecto.** El accesor de assets que sintetiza Tuist **importa UIKit dentro del target dueño del catálogo**, y el design system solo puede importar SwiftUI. La opción quita ese accesor y conserva `Bundle.module`, que es solo Foundation y es todo lo que hace falta.
 - **Los tests del design system importan UIKit; el módulo no.** `Color("typo", bundle:)` nunca falla —devuelve un color de relleno—, así que un asset mal escrito se publicaría sin síntoma. `UIColor(named:in:compatibleWith:)` es la única API que admite no haberlo encontrado. Se comprueban tres cosas por token: que está en el bundle, que sus valores claro y oscuro son los hex de la sección 7, y que ninguno es translúcido. Sin la segunda, un Color Set sin variante oscura pasaría, porque resuelve al valor claro en los dos temas.
 - **Nada de formateo de dinero todavía.** Los componentes reciben un `String` ya formateado. El módulo no puede ver `Money`, y decidir dónde vive el formateador sin una sola pantalla delante sería inventarse el patrón. Se resuelve en la Fase 4.
@@ -696,10 +720,11 @@ Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete compone
 
 **Punto de parada deliberado.** Con dominio, persistencia y design system construidos, los patrones que se repiten son observables en lugar de imaginados. Se extraen las skills citando archivos reales del repo:
 
-- declarar un módulo nuevo en `Project.swift`
+- declarar un módulo nuevo en `Project.swift`, con o sin `resourceGlobs:`
 - añadir una migración GRDB
 - crear una feature con su modelo observable y sus previews
-- añadir un componente al design system
+- añadir un componente al design system, con sus previews en ambos temas
+- añadir un token de color: catálogo, `Colors.swift`, test, `TokenGallery` y las tres tablas de la documentación — cinco sitios que hoy hay que acordarse de tocar a mano
 
 Y se endurece el `CLAUDE.md` raíz con lo que haya fallado en las fases 1 a 3.
 

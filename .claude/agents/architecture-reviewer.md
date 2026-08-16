@@ -31,7 +31,9 @@ Busca `import` en cada módulo y compáralo con la tabla. Señales concretas:
 - `import GRDB`, `import CloudKit` o `import KeepworthPersistence` dentro de `Modules/Features/`.
 - Tipos de GRDB (`Row`, `Record`, `Database`, `DatabaseQueue`, `DatabasePool`) en la API pública de `KeepworthPersistence`.
 
-Excepción documentada y única: `Apps/KeepworthWidgets` sí depende de `KeepworthPersistence`, porque lee la base de datos compartida por App Group.
+Excepciones documentadas, y solo estas tres:
+- `Apps/KeepworthWidgets` sí depende de `KeepworthPersistence`, porque lee la base de datos compartida por App Group.
+- `KeepworthDesignSystemTests` importa `UIKit`. Es la única API que admite no haber encontrado un color del catálogo, y sin ella los tests de token no afirmarían nada. La tabla limita lo que importa el **módulo**, no sus tests.
 
 **2. Dinero.** Cualquier `Double` o `Float` que represente un importe es un bug, incluso "solo para mostrar" o "solo en un test". Busca `Double`, `Float` y `NSDecimalNumber` cerca de nombres como `amount`, `balance`, `total`, `price`, `money`.
 
@@ -49,9 +51,19 @@ Caso concreto y silencioso: una consulta que lea de `entry_line` en lugar de la 
 
 **5. Identificadores.** Ninguna tabla con `AUTOINCREMENT` ni clave primaria entera. Rompe el sync con CloudKit de forma irreparable.
 
-**6. Design system.** Ningún color literal fuera de `KeepworthDesignSystem`: busca `Color(red:`, `Color(hex:`, `#`, `.red`, `.blue`, `.green`, `Color.primary`, `Color.secondary` en features y en la app. Solo se usan los seis tokens. Además, un importe negativo pintado en rojo viola la regla del acento: los gastos van en `ink`.
+**6. Design system.** Ningún color literal fuera de `KeepworthDesignSystem`: busca `Color(red:`, `Color(hex:`, `#colorLiteral`, `Color.red`, `Color.blue`, `Color.green`, `Color.primary`, `Color.secondary`, `.foregroundColor` y `Divider()` en features y en la app. **No** grepees `#` a secas: `#Preview`, `#expect` y `#require` salen en todos los archivos y solo dan falsos positivos. Solo se usan los siete tokens: `bg`, `surface`, `ink`, `inkSoft`, `hairline`, `accent`, `expense`.
+
+El color de un importe marca **dirección, nunca juicio**: `accent` cuando el dinero **entra**, `expense` cuando **sale o se debe** —un gasto, un saldo negativo, el total gastado de un periodo—, e `ink` en **todo lo demás**, incluidos los saldos positivos y las cifras derivadas como lo ahorrado.
+
+Un gasto en `expense` es lo correcto y **no** es hallazgo. Sí lo son: un rojo que no salga del token, un importe entrante que no vaya en `accent`, y una cifra derivada pintada como si fuera dinero movido.
+
+Sobre el signo: **es hallazgo un `+`/`−` ausente en un importe negativo o con dirección**. Un saldo positivo sin signo es lo correcto — no lo señales.
 
 **7. Textos.** Literales de cadena visibles en vistas SwiftUI en lugar de claves de String Catalog.
+
+Dos excepciones que **no** son hallazgo, porque están documentadas en el `CLAUDE.md` de `KeepworthDesignSystem`:
+- Los componentes del design system reciben `String` ya localizado por quien llama. El módulo no tiene String Catalog ni debe tenerlo.
+- `TokenGallery`, `ComponentGallery` y los `#Preview` usan literales y `Text(verbatim:)`: son herramientas de desarrollo, no pantallas.
 
 ## Cómo reportar
 

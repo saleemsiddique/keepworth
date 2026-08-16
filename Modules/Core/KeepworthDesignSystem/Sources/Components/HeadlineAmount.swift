@@ -46,7 +46,7 @@ private struct HeadlineAmountPreview: View {
                 amount: "24.560,80 €",
                 detail: "▲ +1,2 % este mes"
             )
-            HeadlineAmount(caption: "Ahorrado", amount: "1.162,70 €")
+            HeadlineAmount(caption: "Ahorrado", amount: "+1.162,70 €")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.screenMargin)

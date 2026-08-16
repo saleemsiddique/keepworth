@@ -1,4 +1,7 @@
-import CoreGraphics
+// SwiftUI and not CoreGraphics, which is all `CGFloat` needs: the module's contract is
+// "imports SwiftUI" with no exceptions, and one file quietly importing something else is how
+// that contract stops being checkable at a glance.
+import SwiftUI
 
 /// Hierarchy in this app is built from white space and 0.5 pt rules, not from cards and
 /// shadows. That makes these numbers the layout mechanism, so they get one authoritative home.

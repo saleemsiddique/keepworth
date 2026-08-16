@@ -1,6 +1,6 @@
 # KeepworthDesignSystem
 
-Traduce la dirección estética "Ledger" a componentes SwiftUI. Es la **única** fuente de color y tipografía del proyecto.
+Traduce la dirección estética "Ledger" a componentes SwiftUI. Es la **única** fuente de color, tipografía y espaciado del proyecto.
 
 ## Contrato
 
@@ -26,15 +26,25 @@ Viven en `Resources/Tokens.xcassets` como Color Sets con variante clara y oscura
 | `accent` | `#1E9E5A` | `#30D158` | Fósforo: interactivo y dinero que entra |
 | `expense` | `#B3382C` | `#FF6B5E` | Dinero que sale |
 
-**Regla del color en los importes**: marca **dirección, nunca juicio**. `accent` para lo que entra, `expense` para lo que sale, `ink` para lo que no es ninguna de las dos —un saldo positivo, una cifra que solo es un total—. El verde aparece además en los elementos interactivos.
+**Regla del color en los importes**: marca **dirección, nunca juicio**.
+
+| Cuándo | Color | `AmountDirection` |
+|---|---|---|
+| El dinero **entra** | `accent` | `.incoming` |
+| El dinero **sale o se debe** — un gasto, un saldo negativo, el total gastado de un periodo | `expense` | `.outgoing` |
+| **Todo lo demás** — saldos positivos, y cifras derivadas como lo ahorrado | `ink` | `.neutral` |
+
+El verde aparece además en los elementos interactivos.
 
 `expense` espeja a `accent` en construcción: profundo y desaturado en claro, brillante en oscuro. **No es el rojo de alarma del sistema**, y esa contención es el punto: ninguno de los dos grita más que el otro.
 
-**Todo importe lleva su signo**, aunque el color ya diga la dirección. Redundante a propósito: la cifra debe leerse igual en escala de grises, con daltonismo o copiada a un sitio sin color.
+**Lleva signo todo importe que sea negativo o que tenga dirección**; un saldo positivo no lleva ninguno. Se pone aunque el color ya diga lo mismo: redundante a propósito, para que la cifra se lea igual en escala de grises, con daltonismo o copiada a un sitio sin color.
+
+Los componentes no deciden nada de esto: reciben el `String` con su signo y el `direction` ya elegido por quien llama.
 
 ### Por qué hay recursos aquí y en ningún otro módulo
 
-El helper `module()` de `Project.swift` acepta un parámetro `resources:` opcional, y este es el único que lo usa. Es opcional a propósito: un glob que no casa con nada hace fallar la generación.
+El helper `module()` de `Project.swift` acepta `resourceGlobs:`, relativo al `path` del módulo, y este es el único que lo usa (`resourceGlobs: ["Resources/**"]`). Por defecto está vacío a propósito: un glob que no casa con nada hace fallar la generación.
 
 Además el proyecto lleva `disableSynthesizedResourceAccessors: true`. El accesor de assets que sintetiza Tuist **importa UIKit dentro del target dueño del catálogo**, y este módulo solo puede importar SwiftUI. La opción quita ese accesor y conserva `Bundle.module`, que es solo Foundation y es todo lo que `Colors.swift` necesita.
 
@@ -42,9 +52,9 @@ Además el proyecto lleva `disableSynthesizedResourceAccessors: true`. El acceso
 
 Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso. Todas se construyen desde un text style, no desde un tamaño fijo, así que Dynamic Type funciona sin una línea extra en cada pantalla.
 
-- **Importes**: SF Mono semibold con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse.
-- **Títulos y texto**: SF Pro.
-- **Metadatos y etiquetas**: SF Pro 11–13 pt, mayúsculas, tracking amplio. Las tres cosas van juntas siempre, así que se aplican en `SectionCaption` en vez de ofrecerse sueltas.
+- **Importes**: SF Mono con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse. `headlineAmount` va en semibold; `rowAmount` en peso normal, porque una columna entera de importes en semibold pesa demasiado.
+- **Títulos y texto**: SF Pro (`rowTitle`, `rowSubtitle`, `primaryAction`).
+- **Metadatos y etiquetas**: `sectionCaption` es el text style `.caption` en peso medio —unos 12 pt con el tamaño de texto por defecto, y escala con Dynamic Type—, más mayúsculas y tracking amplio. Las tres cosas van juntas siempre, así que se aplican en `SectionCaption` en vez de ofrecerse sueltas.
 
 ## Espaciado
 
