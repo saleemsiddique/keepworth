@@ -14,6 +14,26 @@ Aquí, y solo aquí, se instancian los repositorios reales de `KeepworthPersiste
 
 Si una feature necesita algo que hoy no está en los protocolos de `Domain`, la solución es ampliar el protocolo, **no** dejar que la feature importe `Persistence`.
 
+`Dependencies` es ese contenedor, y `Dependencies.live()` lo monta sobre la base de datos del App Group.
+
+**`Dependencies.live()` no se llama desde el actor principal.** Abrir la base ejecuta las migraciones, y `SQLiteLedgerChanges` arranca una observación que bloquea hasta conseguir acceso de escritura: en el hilo principal eso congela el primer fotograma. `RootView` lo construye en una tarea desprendida por eso.
+
+El identificador del App Group **no está escrito aquí**: sale del Info.plist, que `Project.swift` rellena desde la misma constante que usa para los entitlements. Ya tiene que coincidir en dos sitios; una tercera copia sería un tercer sitio del que se desincroniza.
+
+## Primer arranque
+
+`FirstLaunch.prepareIfNeeded` siembra si no hay divisa base, y no hace nada si ya la hay.
+
+**No hay pantalla de bienvenida.** La divisa sale del `Locale` del dispositivo, con el euro de reserva. Lo primero que enseña la app debería ser el dinero del usuario, no un formulario, y quien haya acertado mal lo cambia en Ajustes — un toque que dan unos pocos, en vez de una pantalla que ven todos.
+
+Los nombres de las cuentas sembradas salen del String Catalog. La lista está en `ESTADO.md` §6 y **no tiene un cajón de sastre «Otros»** en gastos: se traga justo lo que el usuario quería entender.
+
+## Textos
+
+`Resources/Localizable.xcstrings`, en inglés y español desde la primera cadena.
+
+**Siempre con `bundle: .module`.** En un framework, `String(localized:)` y `Text(_:)` buscan en el bundle principal, así que sin él las cadenas salen como su clave —`seed.expense.groceries` en pantalla— sin dar ningún error. Hay un test que lo caza.
+
 ## Navegación
 
 Dos destinos en la barra inferior con el botón de añadir en el centro exacto, y Ajustes como icono en la toolbar superior:
