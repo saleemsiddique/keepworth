@@ -240,40 +240,6 @@
         }
       }
     },
-    "report.previousMonth": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previous month"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mes anterior"
-          }
-        }
-      }
-    },
-    "report.nextMonth": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next month"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mes siguiente"
-          }
-        }
-      }
-    },
     "report.noIncome": {
       "extractionState": "manual",
       "localizations": {
@@ -304,6 +270,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "No salió nada en este periodo."
+          }
+        }
+      }
+    },
+    "report.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ – %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ – %2$@"
           }
         }
       }

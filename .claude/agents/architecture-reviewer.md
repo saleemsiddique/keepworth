@@ -23,7 +23,7 @@ Revisa el diff de trabajo actual (`git diff` y `git diff --cached`) y los archiv
 | `KeepworthPersistence` | `KeepworthDomain`, `GRDB` |
 | `KeepworthSync` | `KeepworthDomain`, `KeepworthPersistence`, `CloudKit` |
 | `KeepworthDesignSystem` | SwiftUI |
-| `Modules/Features/*` | `KeepworthDomain`, `KeepworthDesignSystem` |
+| `Modules/Features/*` | `KeepworthDomain`, `KeepworthDesignSystem`, `FeatureSupport` |
 | `KeepworthAppCore` | todos |
 
 Busca `import` en cada módulo y compáralo con la tabla. Señales concretas:
@@ -33,7 +33,10 @@ Busca `import` en cada módulo y compáralo con la tabla. Señales concretas:
 
 Excepciones documentadas, y solo estas tres:
 - `Apps/KeepworthWidgets` sí depende de `KeepworthPersistence`, porque lee la base de datos compartida por App Group.
-- `KeepworthDesignSystemTests` importa `UIKit`. Es la única API que admite no haber encontrado un color del catálogo, y sin ella los tests de token no afirmarían nada. La tabla limita lo que importa el **módulo**, no sus tests.
+- `KeepworthDesignSystemTests` importa `UIKit`: es la única API que admite no haber encontrado un color del catálogo, y sin ella los tests de token no afirmarían nada.
+- Los targets de test de las features **repiten** los dobles en memoria de `KeepworthDomain`. Un target de test no exporta nada, así que la alternativa sería enviar dobles dentro de un módulo de producción. La copia es el coste menor, y **no es hallazgo**.
+
+La tabla limita lo que importa cada **módulo**, no sus tests.
 
 **2. Dinero.** Cualquier `Double` o `Float` que represente un importe es un bug, incluso "solo para mostrar" o "solo en un test". Busca `Double`, `Float` y `NSDecimalNumber` cerca de nombres como `amount`, `balance`, `total`, `price`, `money`.
 
