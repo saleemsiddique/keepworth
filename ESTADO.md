@@ -6,7 +6,7 @@
 
 Última actualización: 2026-08-16 — **Fase 4 arrancada**: resuelta la lectura de asientos, que era su bloqueante (sección 9). Antes, ese mismo día, la **Fase 3 (Design System) mergeada a `main`** (PR #5) y la **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
-**Siguiente paso: las pantallas de la Fase 4**, ya con la lectura de asientos resuelta.
+**Siguiente paso: Fase 4 bis (borrado y archivado)**, o la Fase 5 (editor de movimiento).
 
 ### Cómo se cuentan los tests en este documento
 
@@ -54,7 +54,7 @@ La **Fase 3 (Design System)** está construida: build limpio, tests en verde y l
 
 Entre medias, el PR #3 reescribió los comentarios del código en inglés y los redujo. Esa convención ya es regla dura: **todo lo que va dentro de un archivo de código está en inglés** —comentarios, identificadores y nombres de test, en Swift y también en `Project.swift`, el CI, los entitlements y los hooks—, y el español se queda en la documentación y en la conversación. Está en `CLAUDE.md` § «Idioma del código», con sus dos excepciones.
 
-**La Fase 4 (Resumen y Movimientos) está empezada**: su bloqueante de dominio —no había forma de leer un `Entry`— ya está resuelto. Faltan las pantallas.
+**La Fase 4 (Resumen y Movimientos) está construida.** Falta la 4 bis: borrado y archivado.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -82,6 +82,9 @@ Apps/Keepworth/Keepworth.entitlements        App Group + CloudKit
 
 Modules/Core/KeepworthDomain/                CLAUDE.md + la capa completa (Fase 1)
 Modules/Core/KeepworthPersistence/           CLAUDE.md + la capa completa (Fase 2)
+Modules/Features/FeatureSupport/             lo que dos pantallas dibujan igual
+Modules/Features/FeatureSummary/             Resumen y el informe del periodo (Fase 4)
+Modules/Features/FeatureTransactions/        la lista de movimientos (Fase 4)
 Modules/Core/KeepworthSync/                  CLAUDE.md + placeholder + test
 Modules/Core/KeepworthDesignSystem/          CLAUDE.md + la capa completa (Fase 3)
 Modules/KeepworthAppCore/                    CLAUDE.md + RootView + test
@@ -91,7 +94,6 @@ El `SyncModule.swift` que queda en Sync es **andamiaje deliberado**: existe solo
 
 ### Lo que no existe todavía
 
-- `Modules/Features/` — se crea en la Fase 4.
 - `Apps/KeepworthWidgets/` — se crea en la Fase 7. Se dejó fuera a propósito: declararlo ahora obligaría a escribir un `WidgetBundle` placeholder inservible.
 - Las skills de **crear una feature** y **añadir una migración** — aplazadas a la Fase 4.5 por falta de instancias reales; el razonamiento está en la sección 9. Las tres que sí tenían evidencia están escritas en `.claude/skills/`.
 
@@ -768,7 +770,24 @@ Se resolvió con **`entries(matching: EntryQuery) -> [Entry]`**, que devuelve as
 
 De paso se corrigió `InMemoryEntryRepository.save`, que hacía `append` mientras el real hace upsert por id: un doble que no es fiel al contrato que valida.
 
-Lo demás que la fase tiene que traer y hoy no existe: el **borrado** con su regla —sin movimientos se borra, con movimientos se archiva—, `archive` en bancos y `ValueObservation`.
+**Construida (2026-08-16).** Lo que trajo:
+
+- **`MoneyFormatter` en `Domain`**, la única forma de convertir `Money` en texto. `Decimal` aparece ahí y solo en el último paso hacia el texto; la aritmética sigue en `Int64`.
+- **`LedgerChanges`**, una señal de «el libro se movió» sin decir qué. Se descartó observar cada consulta: obligaba a una variante observada de cada una y a un doble fiel de cada una, para evitar un coste que nadie nota. Una sola observación para toda la app, repartida entre los oyentes — `DatabaseRegionObservation.start` bloquea el hilo hasta conseguir acceso de escritura, así que una por pantalla congelaría el arranque.
+- **`KeepworthAppCore` con `Dependencies` y `FirstLaunch`.** Sin pantalla de bienvenida: la divisa sale del `Locale`, con el euro de reserva.
+- **`FeatureSummary`** con la pantalla del informe, y **`FeatureTransactions`**, más **`FeatureSupport`** con lo que las dos dibujan igual.
+- **String Catalogs EN/ES** en los tres módulos con texto, siempre con `bundle: .module`.
+
+Decisiones que conviene no reabrir:
+
+- **El delta de la cabecera sale de `PeriodSummary.netWorthChange`**, no de dos lecturas de patrimonio, así la cifra de arriba y el informe no pueden discrepar.
+- **Cuál pata de un movimiento es «el importe» vive en `Domain`** (`Entry.moneyLine`): es contabilidad, no dibujo. Un traspaso se lee desde donde salió el dinero.
+- **Bancos por total y cuentas por saldo, ordenados en el modelo.** La clave es un `Money` que hay que calcular antes.
+- **El N+1 se acepta a sabiendas**, según lo ya decidido en §6 bis: se mide cuando haya datos.
+
+Dos fallos que solo el simulador encontró, y que ningún test de modelo habría cazado: un modificador sobre un `Group` que envuelve un `switch` se aplica a cada rama, así que el `.task` se cancelaba en el primer cambio de estado y la pantalla salía en blanco; y el mapa de nombres de cuenta no incluía las categorías, así que un movimiento nombraba su cuenta dos veces.
+
+**Lo que queda para la Fase 4 bis**: el **borrado** con su regla —sin movimientos se borra, con movimientos se archiva—, `archive` en bancos, y el botón ⊕, que sigue inerte hasta que la Fase 5 traiga el editor.
 
 Y el **formateo de dinero**: los componentes del design system reciben `String` porque el módulo no puede ver `Money`. Aquí se decide dónde vive el formateador, con la primera pantalla real delante.
 

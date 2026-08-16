@@ -93,15 +93,38 @@ let coreModules: [Target] =
 
 // One folder per feature. A feature talks to the protocols in `Domain` and draws with
 // `DesignSystem`: it never sees `Persistence`, `Sync` or GRDB.
-let features: [Target] = module(
-    name: "FeatureSummary",
-    path: "Modules/Features/FeatureSummary",
-    dependencies: [
-        .target(name: "KeepworthDomain"),
-        .target(name: "KeepworthDesignSystem"),
-    ],
-    resourceGlobs: ["Resources/**"]
-)
+//
+// `FeatureSupport` is the exception in shape but not in rights: it is a feature-layer module
+// that holds what two screens both draw, and it may import exactly what a feature may.
+let features: [Target] =
+    module(
+        name: "FeatureSupport",
+        path: "Modules/Features/FeatureSupport",
+        dependencies: [
+            .target(name: "KeepworthDomain"),
+            .target(name: "KeepworthDesignSystem"),
+        ]
+    )
+    + module(
+        name: "FeatureSummary",
+        path: "Modules/Features/FeatureSummary",
+        dependencies: [
+            .target(name: "KeepworthDomain"),
+            .target(name: "KeepworthDesignSystem"),
+            .target(name: "FeatureSupport"),
+        ],
+        resourceGlobs: ["Resources/**"]
+    )
+    + module(
+        name: "FeatureTransactions",
+        path: "Modules/Features/FeatureTransactions",
+        dependencies: [
+            .target(name: "KeepworthDomain"),
+            .target(name: "KeepworthDesignSystem"),
+            .target(name: "FeatureSupport"),
+        ],
+        resourceGlobs: ["Resources/**"]
+    )
 
 // Composition root: the only module allowed to know concrete implementations.
 let appCore: [Target] = module(
@@ -113,6 +136,7 @@ let appCore: [Target] = module(
         .target(name: "KeepworthSync"),
         .target(name: "KeepworthDesignSystem"),
         .target(name: "FeatureSummary"),
+        .target(name: "FeatureTransactions"),
     ],
     resourceGlobs: ["Resources/**"]
 )

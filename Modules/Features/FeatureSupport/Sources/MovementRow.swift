@@ -7,13 +7,28 @@ import SwiftUI
 /// The colour follows the money account's leg, which `Entry.moneyLine` picks. Everything the
 /// row needs is passed in already resolved — a view that looked accounts up while drawing
 /// would query on every frame.
-struct MovementRow: View {
-    let entry: Entry
-    let accountNames: [AccountID: String]
-    let moneyAccountIDs: Set<AccountID>
-    let formatter: MoneyFormatter
+///
+/// Lives in `FeatureSupport` because both Summary and Movements draw it, which is the second
+/// use the project's rule waits for before extracting anything.
+public struct MovementRow: View {
+    private let entry: Entry
+    private let accountNames: [AccountID: String]
+    private let moneyAccountIDs: Set<AccountID>
+    private let formatter: MoneyFormatter
 
-    var body: some View {
+    public init(
+        entry: Entry,
+        accountNames: [AccountID: String],
+        moneyAccountIDs: Set<AccountID>,
+        formatter: MoneyFormatter
+    ) {
+        self.entry = entry
+        self.accountNames = accountNames
+        self.moneyAccountIDs = moneyAccountIDs
+        self.formatter = formatter
+    }
+
+    public var body: some View {
         LedgerRow(
             title: entry.payee ?? counterpartName ?? "",
             subtitle: subtitle,

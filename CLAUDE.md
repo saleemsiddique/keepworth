@@ -20,10 +20,12 @@ Estas reglas no se negocian por conveniencia. Si una tarea parece exigir romper 
 | `KeepworthPersistence` | `Domain` + GRDB |
 | `KeepworthSync` | `Domain` + `Persistence` + CloudKit |
 | `KeepworthDesignSystem` | SwiftUI únicamente |
-| `Feature*` | `Domain` + `DesignSystem` |
+| `Feature*` | `Domain` + `DesignSystem` (+ `FeatureSupport`) |
 | `KeepworthAppCore` | todos |
 
 **Ninguna feature importa `KeepworthPersistence`, `KeepworthSync`, `GRDB` ni `CloudKit`.** Las features dependen de protocolos declarados en `Domain`; `KeepworthAppCore` es el único lugar donde se instancian implementaciones concretas.
+
+`FeatureSupport` está en la capa de features y tiene sus mismos derechos: guarda lo que dos pantallas dibujan igual, y no puede importar nada que una feature no pueda.
 
 Un `import GRDB` dentro de `Modules/Features/` es un error de arquitectura, no un atajo. Si una feature necesita algo que no está en los protocolos de `Domain`, **se amplía el protocolo**.
 
@@ -180,13 +182,13 @@ Los recuentos de tests se dicen en **casos ejecutados y por módulo**, nunca en 
 ```
 Apps/Keepworth/            app target
 Modules/Core/              Domain, Persistence, Sync, DesignSystem
+Modules/Features/          una carpeta por pantalla, más FeatureSupport
 Modules/KeepworthAppCore/  composition root: DI y navegación raíz
 ```
 
-Aún no existen, y sus targets se declararán en `Project.swift` cuando toque:
+Aún no existe, y su target se declarará en `Project.swift` cuando toque:
 
 ```
-Modules/Features/          una carpeta por feature (Fase 4)
 Apps/KeepworthWidgets/     widget extension (Fase 7)
 ```
 

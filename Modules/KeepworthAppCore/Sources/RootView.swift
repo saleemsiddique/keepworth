@@ -1,4 +1,5 @@
 import FeatureSummary
+import FeatureTransactions
 import KeepworthDesignSystem
 import SwiftUI
 
@@ -96,8 +97,16 @@ private struct LedgerTabs: View {
                     )
                 }
             case .transactions:
-                // Lands in the next PR.
-                Spacer()
+                NavigationStack {
+                    TransactionsView(
+                        model: TransactionsModel(
+                            accounts: dependencies.accounts,
+                            entries: dependencies.entries,
+                            changes: dependencies.changes
+                        ),
+                        formatter: dependencies.formatter
+                    )
+                }
             }
 
             LedgerTabBar(
