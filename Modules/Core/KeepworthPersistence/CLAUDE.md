@@ -35,6 +35,14 @@ Los records son tipos **aparte** de las entidades de `Domain`, y no por gusto: `
 
 Esa separación es lo que obliga a que **toda lectura pase por el inicializador que valida**. Decodificar directamente en la entidad dejaría entrar una fila que el dominio considera imposible —una categoría dentro de un banco— y el resto del código se fía de que no existe. Hay un test que lo demuestra saltándose el `CHECK` del esquema.
 
+## Lectura de asientos
+
+`entries(matching:)` va en **dos consultas**, no una por asiento: primero qué movimientos casan con el filtro, después todas las líneas de esos movimientos de golpe.
+
+Toda lectura pasa por `Entry.init`, así que un asiento cuyas líneas almacenadas ya no suman cero **falla al leerse** en vez de pintarse en pantalla. Hay test. Por eso `toDomain(lines:)` recibe **todas** las líneas del asiento aunque el filtro solo casara con una: un subconjunto nunca cuadra.
+
+El desempate del orden es `created_at`. `occurred_on` no tiene hora, así que varios movimientos del mismo día volverían en el orden que SQLite quisiera y la lista se reordenaría sola entre arranques.
+
 ## Escritura
 
 - **`created_at` y `deleted_at` no se reescriben nunca en un `save`.** Se leen de la fila existente con `StoredTimestamps`. Limpiar un tombstone al guardar resucita la fila en el siguiente sync.

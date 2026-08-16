@@ -85,24 +85,69 @@ actor InMemoryAccountRepository: AccountRepository {
 
 actor InMemoryEntryRepository: EntryRepository {
     private(set) var savedEntries: [Entry]
+    /// Stands in for `created_at`, which the SQLite one uses to break ties between movements
+    /// of the same day. Without it this double would order those the opposite way round from
+    /// production, and a feature test would prove a first row the user never sees.
+    private var savedOrder: [EntryID: Int] = [:]
+    private var nextSavedOrder = 0
 
     init(_ entries: [Entry] = []) {
         self.savedEntries = entries
+        for entry in entries {
+            savedOrder[entry.id] = nextSavedOrder
+            nextSavedOrder += 1
+        }
     }
 
+    /// Upserts by id, like the SQLite one. Appending would make a re-saved entry count twice
+    /// here and once in production, which is the kind of difference that makes a double prove
+    /// something the real thing does not.
     func save(_ entry: Entry) async throws {
-        savedEntries.append(entry)
+        if let existing = savedEntries.firstIndex(where: { $0.id == entry.id }) {
+            savedEntries[existing] = entry
+        } else {
+            savedEntries.append(entry)
+        }
+        // Only on first save, mirroring `created_at`, which a re-save never rewrites.
+        if savedOrder[entry.id] == nil {
+            savedOrder[entry.id] = nextSavedOrder
+            nextSavedOrder += 1
+        }
     }
 
+    /// Unordered, unlike the SQLite one. Deliberate: every caller of this method sums what it
+    /// gets — net worth, balances, the period report — so imitating an order nobody depends on
+    /// would be inventing fidelity instead of having it.
     func lines(matching query: EntryLineQuery) async throws -> [EntryLine] {
-        savedEntries
-            .filter { entry in
-                if let from = query.from, entry.occurredOn < from { return false }
-                if let through = query.through, entry.occurredOn > through { return false }
-                return true
-            }
+        newestFirst(within: query.from, and: query.through)
             .flatMap(\.lines)
             .filter { query.accountIDs.contains($0.accountID) }
+    }
+
+    func entries(matching query: EntryQuery) async throws -> [Entry] {
+        newestFirst(within: query.from, and: query.through)
+            .filter { entry in
+                guard let accountIDs = query.accountIDs else { return true }
+                return entry.lines.contains { accountIDs.contains($0.accountID) }
+            }
+            .prefix(query.limit)
+            .map { $0 }
+    }
+
+    /// Same order as `ORDER BY occurred_on DESC, created_at DESC` in the SQLite one.
+    private func newestFirst(within from: CalendarDate?, and through: CalendarDate?) -> [Entry] {
+        savedEntries
+            .filter { entry in
+                if let from, entry.occurredOn < from { return false }
+                if let through, entry.occurredOn > through { return false }
+                return true
+            }
+            .sorted { left, right in
+                if left.occurredOn != right.occurredOn {
+                    return left.occurredOn > right.occurredOn
+                }
+                return savedOrder[left.id, default: 0] > savedOrder[right.id, default: 0]
+            }
     }
 }
 

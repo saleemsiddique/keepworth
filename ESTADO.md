@@ -4,9 +4,9 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-16 — **Fase 3 (Design System) mergeada a `main`** (PR #5) y **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-16 — **Fase 4 arrancada**: resuelta la lectura de asientos, que era su bloqueante (sección 9). Antes, ese mismo día, la **Fase 3 (Design System) mergeada a `main`** (PR #5) y la **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
-**Siguiente paso: Fase 4 (Resumen y Movimientos), que empieza decidiendo cómo se leen los asientos.**
+**Siguiente paso: las pantallas de la Fase 4**, ya con la lectura de asientos resuelta.
 
 ### Cómo se cuentan los tests en este documento
 
@@ -14,8 +14,9 @@ Se han corregido cifras que se venían arrastrando mal desde la Fase 1. La conve
 
 - Se dice **casos ejecutados**, no atributos `@Test` escritos. Un test parametrizado es una función y muchos casos, y `xcodebuild` cuenta los casos.
 - Se dice **de qué módulo**. El total del repositorio incluye los placeholders de Sync y AppCore, que no son de ninguna fase.
+- **La cifra vive solo aquí.** Repetirla en cada sección de fase es lo que la hizo derivar tres veces: las fases dicen «tests en verde» y quien quiera el número lo busca en esta línea.
 
-Medido el 2026-08-16: 99 funciones `@Test` que expanden a **123 casos ejecutados** — Domain 90, Persistence 24, DesignSystem 7, y 1 placeholder en Sync y otro en AppCore.
+Medido el 2026-08-16: 119 funciones `@Test` que expanden a **143 casos ejecutados** — Domain 98, Persistence 36, DesignSystem 7, y 1 placeholder en Sync y otro en AppCore.
 
 ---
 
@@ -49,11 +50,11 @@ La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se habí
 
 La **Fase 1 (Dominio)** y la **Fase 2 (Persistencia)** están completadas y **mergeadas a `main`**: la primera el 2026-08-08 (PR #2), la segunda el 2026-08-13 (PR #4). Cómo quedó el dominio y por qué está en la sección 6 bis; las decisiones de persistencia, en la sección 9.
 
-La **Fase 3 (Design System)** está construida: build limpio, 123 casos de test en verde y lint limpio. Las decisiones que se tomaron al escribirla están en la sección 9.
+La **Fase 3 (Design System)** está construida: build limpio, tests en verde y lint limpio. Las decisiones que se tomaron al escribirla están en la sección 9.
 
 Entre medias, el PR #3 reescribió los comentarios del código en inglés y los redujo. Esa convención ya es regla dura: **todo lo que va dentro de un archivo de código está en inglés** —comentarios, identificadores y nombres de test, en Swift y también en `Project.swift`, el CI, los entitlements y los hooks—, y el español se queda en la documentación y en la conversación. Está en `CLAUDE.md` § «Idioma del código», con sus dos excepciones.
 
-**La siguiente fase por empezar es la 4 (Resumen y Movimientos).** Arranca por un bloqueante de dominio: hoy no hay forma de leer un `Entry`.
+**La Fase 4 (Resumen y Movimientos) está empezada**: su bloqueante de dominio —no había forma de leer un `Entry`— ya está resuelto. Faltan las pantallas.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -677,7 +678,7 @@ Lint limpio y el revisor de arquitectura sin hallazgos. `DomainModule.swift` eli
 - `CurrencyCode` existe desde el día uno; el exponente es 2 para todas las divisas en v1.
 - Identificadores tipados (`AccountID`, `EntryID`…) sobre `UUID`.
 - Los repositorios son `async throws` y **lanzan** cuando algo no existe, en vez de devolver `nil`.
-- Una sola consulta de líneas (`EntryLineQuery`) en lugar de un método por combinación.
+- Una sola consulta de líneas (`EntryLineQuery`) en lugar de un método por combinación. La lectura de asientos enteros llegó después, en la Fase 4, con `EntryQuery`: es otra pregunta, no una variante de la misma.
 - La suma la hace el dominio en Swift, no SQL: la capa que garantiza los invariantes es la que cuenta el dinero.
 
 ### Fase 2 — Persistencia — **completada y mergeada (PR #4, 2026-08-13)**
@@ -704,7 +705,7 @@ Lint limpio.
 
 ### Fase 3 — Design System — **construida (2026-08-15)**
 
-Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete componentes y dos galerías de previews: `TokenGallery` para la paleta y las voces, `ComponentGallery` para los componentes en contexto. Build sin warnings, 123 casos de test en verde y lint limpio.
+Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete componentes y dos galerías de previews: `TokenGallery` para la paleta y las voces, `ComponentGallery` para los componentes en contexto. Build sin warnings, tests en verde y lint limpio.
 
 **Decisiones tomadas al escribirla:**
 
@@ -756,9 +757,16 @@ Una regla vive en **un solo sitio autoritativo**; la skill no la repite, la enla
 
 `FeatureSummary` y `FeatureTransactions` con SwiftUI y `@Observable`, más la pantalla de informe que se empuja desde Resumen. Barra inferior con ⊕ centrado y Ajustes en toolbar. Observación reactiva con `ValueObservation` de GRDB para que la UI se refresque sola. **Localización EN/ES desde la primera cadena**, sin textos incrustados.
 
-**Empieza por aquí: hoy no hay forma de leer un asiento.** Lo destapó la auditoría del 2026-08-15 y no figuraba como pendiente en ninguna parte. `EntryRepository` solo tiene `save(_:)` y `lines(matching:)`; `EntryRecord` es el único record sin `toDomain()`, porque solo se escribe; y `EntryLine` no referencia a su `Entry`, así que de una consulta de líneas no se puede reconstruir ni la fecha, ni el beneficiario, ni la agrupación. Con eso salen el patrimonio y el informe —que agrupan por cuenta— pero **no sale la lista de Movimientos ni el editor de la Fase 5**.
+**La lectura de asientos ya está resuelta (2026-08-16).** Era un bloqueante que la auditoría destapó y que no figuraba como pendiente en ninguna parte: `EntryRepository` solo sabía escribir y devolver patas sueltas, así que salían el patrimonio y el informe —que agrupan por cuenta— pero no la lista de Movimientos ni el editor de la Fase 5.
 
-Hay que ampliar `EntryRepository` con una lectura de asientos, dar `toDomain()` a `EntryRecord`, y decidir cómo llega una línea a su asiento: un `entryID` en `EntryLine`, o un tipo de lectura que devuelva el asiento con sus líneas dentro. Es una decisión de dominio y se habla antes de escribirla.
+Se resolvió con **`entries(matching: EntryQuery) -> [Entry]`**, que devuelve asientos completos y ya validados. Las decisiones que se tomaron:
+
+- **Asientos enteros, no una proyección sin validar.** Se valoró un `EntryListItem` más barato de leer y se descartó: sería un `Entry` paralelo sin invariante, justo lo que la Fase 2 evitó al separar records de entidades. Hoy un asiento descuadrado en la base de datos **falla al leerse** en vez de pintarse; hay test que lo demuestra corrompiendo una pata a mano.
+- **Tampoco un `entryID` en `EntryLine`.** Habría permitido agrupar, pero `occurredOn` y `payee` viven en el asiento, así que hacía falta una segunda consulta igual — y construir una línea pasaba a exigir el id de su asiento, lo que deja fabricar una línea que dice pertenecer a un asiento que no es el suyo.
+- **Filtrar por cuenta elige qué asientos, nunca qué líneas.** Es la consecuencia menos obvia de que `Entry.init` valide: un gasto tiene una pata en la cuenta y otra en la categoría, y devolver solo la que casa produce un asiento que no cuadra.
+- **`limit` obligatorio**, por lo mismo que `EntryLineQuery` no admite «todas las cuentas». Cero o negativo lanza: SQLite lee un `LIMIT` negativo como «sin límite», así que dejarlo pasar convertiría la defensa en su contrario. La paginación con cursor se añadirá cuando haya volumen que la pida; es aditiva.
+
+De paso se corrigió `InMemoryEntryRepository.save`, que hacía `append` mientras el real hace upsert por id: un doble que no es fiel al contrato que valida.
 
 Lo demás que la fase tiene que traer y hoy no existe: el **borrado** con su regla —sin movimientos se borra, con movimientos se archiva—, `archive` en bancos y `ValueObservation`.
 
