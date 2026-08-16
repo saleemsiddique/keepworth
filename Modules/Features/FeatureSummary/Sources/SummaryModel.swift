@@ -51,9 +51,13 @@ public final class SummaryModel {
 
     /// Loads once, then again on every ledger change, until the screen goes away.
     public func observe() async {
+        // Subscribed **before** the first load, not after. `changes()` registers the listener
+        // synchronously, so a write landing between the read and the subscription would go
+        // unnoticed until the next one.
+        let signals = changes.changes()
         await load()
         do {
-            for try await _ in changes.changes() {
+            for try await _ in signals {
                 await load()
             }
         } catch {
@@ -77,8 +81,12 @@ public final class SummaryModel {
 
         let netWorth = try await CalculateNetWorth(accounts: accounts, entries: entries)
             .execute(asOf: today, in: baseCurrency)
+        // Through **today**, not through the end of the month. Net worth stops at today
+        // because a future-dated movement has not happened yet; a period that ran to the 31st
+        // would count it, and the headline would claim a change the figure beside it does not
+        // show. Two cut-off dates in one header is a contradiction the user has to resolve.
         let month = try await SummarizePeriod(accounts: accounts, entries: entries)
-            .execute(from: today.startOfMonth, through: today.endOfMonth, in: baseCurrency)
+            .execute(from: today.startOfMonth, through: today, in: baseCurrency)
 
         let everyAccount = try await accounts.accounts(ofKinds: Set(AccountKind.allCases))
         let moneyAccountIDs = Set(everyAccount.filter { $0.kind.holdsMoney }.map(\.id))
@@ -89,8 +97,11 @@ public final class SummaryModel {
             institutions: try await institutionBalances(asOf: today, in: baseCurrency),
             unbanked: try await unbankedBalances(asOf: today),
             month: month,
+            // Also through today, for the same reason: a movement dated next week is not
+            // recent, and heading the list with one the net worth above ignores invites the
+            // user to add them up and find they do not.
             recent: try await entries.entries(
-                matching: try EntryQuery(limit: Self.recentCount)
+                matching: try EntryQuery(through: today, limit: Self.recentCount)
             ),
             accountNames: Dictionary(
                 everyAccount.map { ($0.id, $0.name) },
@@ -116,9 +127,11 @@ public final class SummaryModel {
 
         var found: [InstitutionBalance] = []
         for institution in try await institutions.allInstitutions() {
+            // Archived accounts stay. Archiving takes an account out of the **editor**, not
+            // out of the ledger: its money is still the user's and net worth still counts it.
+            // Hiding the row while its balance stays inside the bank total would leave the
+            // sum on screen not adding up to the rows under it.
             let accountsHere = try await accounts.accounts(inInstitution: institution.id)
-                .filter { !$0.isArchived }
-            // A bank whose accounts were all archived is a bank the user is done with.
             guard !accountsHere.isEmpty else { continue }
 
             found.append(
@@ -138,7 +151,7 @@ public final class SummaryModel {
 
     private func unbankedBalances(asOf today: CalendarDate) async throws -> [AccountBalance] {
         let loose = try await accounts.accounts(ofKinds: [.asset, .liability])
-            .filter { $0.institutionID == nil && !$0.isArchived }
+            .filter { $0.institutionID == nil }
         return try await balances(of: loose, asOf: today)
     }
 

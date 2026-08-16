@@ -17,7 +17,9 @@ private struct Fixture {
     let card: Account
     let cash: Account
     let groceries: Account
+    let rent: Account
     let salary: Account
+    let openingBalance: Account
     let institutions: FakeInstitutionRepository
     let accounts: FakeAccountRepository
     let entries: FakeEntryRepository
@@ -34,12 +36,16 @@ private struct Fixture {
             institutionID: bbva.id, name: "Visa", kind: .liability, currency: .eur)
         cash = try Account(name: "Efectivo", kind: .asset, currency: .eur)
         groceries = try Account(name: "Supermercado", kind: .expense, currency: .eur)
+        rent = try Account(name: "Vivienda", kind: .expense, currency: .eur)
         salary = try Account(name: "Nómina", kind: .income, currency: .eur)
+        openingBalance = try Account(
+            name: "Saldo inicial", kind: .equity, currency: .eur, isSystem: true)
 
         changes = FakeLedgerChanges()
         institutions = FakeInstitutionRepository([bbva, tradeRepublic], changes: changes)
         accounts = FakeAccountRepository(
-            [payroll, savings, card, cash, groceries, salary], changes: changes)
+            [payroll, savings, card, cash, groceries, rent, salary, openingBalance],
+            changes: changes)
         entries = FakeEntryRepository(changes: changes)
         settings = FakeSettingsRepository(baseCurrency: .eur, changes: changes)
     }
@@ -68,11 +74,16 @@ private struct Fixture {
         )
     }
 
-    func record(expense amount: Int64, on day: Int, from account: Account) async throws {
+    func record(
+        expense amount: Int64,
+        on day: Int,
+        from account: Account,
+        category: Account? = nil
+    ) async throws {
         _ = try await RecordExpense(accounts: accounts, entries: entries).execute(
             RecordExpense.Request(
                 accountID: account.id,
-                categoryID: groceries.id,
+                categoryID: (category ?? groceries).id,
                 amount: Money(minorUnits: amount, currency: .eur),
                 occurredOn: try CalendarDate(year: 2026, month: 1, day: day),
                 payee: "Mercadona"
@@ -177,15 +188,93 @@ func categoriesNeverAppearAmongAccounts() async throws {
 }
 
 @MainActor
-@Test("An archived account leaves the list")
-func archivedAccountLeavesTheList() async throws {
+@Test("An archived account with money stays on the list, because its money is still there")
+func archivedAccountWithMoneyStaysOnTheList() async throws {
     let fixture = try Fixture()
+    try await fixture.record(income: 50000, on: 3, into: fixture.card)
     try await fixture.accounts.archive(fixture.card.id)
 
     let snapshot = try await snapshot(of: fixture.model())
 
+    // Archiving takes an account out of the editor, not out of the ledger. Hiding the row
+    // while net worth and the bank total keep counting it would leave the figure on screen
+    // not adding up to the rows beneath it — with a balance of zero nobody would notice,
+    // which is why this test uses one that is not.
     let banked = snapshot.institutions.flatMap { $0.accounts.map(\.account.name) }
-    #expect(!banked.contains("Visa"))
+    #expect(banked.contains("Visa"))
+
+    let bbva = try #require(snapshot.institutions.first { $0.institution.name == "BBVA" })
+    let sumOfRows = bbva.accounts.reduce(Int64(0)) { $0 + $1.balance.minorUnits }
+    #expect(bbva.total.minorUnits == sumOfRows)
+}
+
+@MainActor
+@Test("The month stops at today, like net worth does")
+func monthStopsAtToday() async throws {
+    let fixture = try Fixture()
+    try await fixture.record(income: 100_000, on: 5, into: fixture.payroll)
+    // Today is the 20th in the fixture.
+    try await fixture.record(income: 900_000, on: 28, into: fixture.payroll)
+
+    let snapshot = try await snapshot(of: fixture.model())
+
+    // Two cut-off dates in one header would have it claim a change the figure beside it does
+    // not show.
+    #expect(snapshot.netWorth == Money(minorUnits: 100_000, currency: .eur))
+    #expect(snapshot.monthChange == Money(minorUnits: 100_000, currency: .eur))
+    #expect(snapshot.month.totalIncome == Money(minorUnits: 100_000, currency: .eur))
+    // And the same for what the screen calls recent.
+    #expect(snapshot.recent.count == 1)
+}
+
+@MainActor
+@Test("The report groups by category and totals each side")
+func reportGroupsByCategory() async throws {
+    let fixture = try Fixture()
+    try await fixture.record(income: 210_000, on: 3, into: fixture.payroll)
+    try await fixture.record(expense: 80000, on: 4, from: fixture.payroll, category: fixture.rent)
+    try await fixture.record(expense: 4230, on: 5, from: fixture.payroll)
+    try await fixture.record(expense: 1770, on: 6, from: fixture.payroll)
+
+    let snapshot = try await snapshot(of: fixture.model())
+
+    #expect(snapshot.month.totalIncome == Money(minorUnits: 210_000, currency: .eur))
+    #expect(snapshot.month.totalExpenses == Money(minorUnits: 86000, currency: .eur))
+    #expect(snapshot.month.saved == Money(minorUnits: 124_000, currency: .eur))
+
+    // Groceries twice, housing once: the report groups by category rather than listing
+    // movements, which is what makes it answer "where did it go".
+    #expect(snapshot.month.expenses.count == 2)
+    let groceries = try #require(
+        snapshot.month.expenses.first { $0.accountID == fixture.groceries.id })
+    #expect(groceries.total == Money(minorUnits: 6000, currency: .eur))
+
+    // And it cannot contradict the headline: what was saved plus starting balances is what
+    // net worth did.
+    #expect(snapshot.monthChange == snapshot.month.netWorthChange)
+}
+
+@MainActor
+@Test("A starting balance lifts net worth without being income")
+func startingBalanceLiftsNetWorthWithoutBeingIncome() async throws {
+    let fixture = try Fixture()
+    try await SetOpeningBalance(accounts: fixture.accounts, entries: fixture.entries)
+        .execute(
+            SetOpeningBalance.Request(
+                accountID: fixture.payroll.id,
+                balance: Money(minorUnits: 300_000, currency: .eur),
+                occurredOn: try CalendarDate(year: 2026, month: 1, day: 2)
+            )
+        )
+
+    let snapshot = try await snapshot(of: fixture.model())
+
+    // The trap ESTADO §6 warns about: the money was already the user's, so it shows up in
+    // net worth without ever being income. `netWorthChange` is what keeps the two agreeing.
+    #expect(snapshot.month.totalIncome.isZero)
+    #expect(snapshot.month.openingBalances == Money(minorUnits: 300_000, currency: .eur))
+    #expect(snapshot.monthChange == Money(minorUnits: 300_000, currency: .eur))
+    #expect(snapshot.netWorth == Money(minorUnits: 300_000, currency: .eur))
 }
 
 @MainActor

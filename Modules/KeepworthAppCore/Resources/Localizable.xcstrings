@@ -291,23 +291,6 @@
         }
       }
     },
-    "root.settings": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settings"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajustes"
-          }
-        }
-      }
-    },
     "root.loading": {
       "extractionState": "manual",
       "localizations": {

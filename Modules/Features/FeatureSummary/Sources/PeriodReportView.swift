@@ -1,3 +1,5 @@
+import FeatureSupport
+import Foundation
 import KeepworthDesignSystem
 import KeepworthDomain
 import SwiftUI
@@ -10,6 +12,7 @@ struct PeriodReportView: View {
     let summary: PeriodSummary
     let accountNames: [AccountID: String]
     let formatter: MoneyFormatter
+    var locale: Locale = .autoupdatingCurrent
 
     var body: some View {
         ScrollView {
@@ -104,8 +107,15 @@ struct PeriodReportView: View {
         totals.sorted { $0.total.minorUnits > $1.total.minorUnits }
     }
 
+    /// Written the way the reader's language writes dates. `CalendarDate.description` is the
+    /// schema's `yyyy-MM-dd`, which belongs in a column and not in a navigation bar.
     private var title: String {
-        "\(summary.from) — \(summary.through)"
+        let style = CalendarDate.longDayStyle(in: locale)
+        return String(
+            localized: "report.title",
+            defaultValue: "\(summary.from.formatted(style)) – \(summary.through.formatted(style))",
+            bundle: .module
+        )
     }
 
     private func negated(_ amount: Money) -> Money {

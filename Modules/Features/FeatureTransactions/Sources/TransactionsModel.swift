@@ -34,10 +34,15 @@ public final class TransactionsModel {
         self.changes = changes
     }
 
+    /// Loads once, then again on every ledger change, until the screen goes away.
     public func observe() async {
+        // Subscribed **before** the first load, not after. `changes()` registers the listener
+        // synchronously, so a write landing between the read and the subscription would go
+        // unnoticed until the next one.
+        let signals = changes.changes()
         await load()
         do {
-            for try await _ in changes.changes() {
+            for try await _ in signals {
                 await load()
             }
         } catch {

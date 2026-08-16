@@ -4,7 +4,7 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-16 — **Fase 4 arrancada**: resuelta la lectura de asientos, que era su bloqueante (sección 9). Antes, ese mismo día, la **Fase 3 (Design System) mergeada a `main`** (PR #5) y la **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-16 — **Fase 4 construida**: la app arranca, se siembra sola y enseña Resumen, Movimientos y el informe del periodo (sección 9). Antes, ese mismo día, la **Fase 3 (Design System) mergeada a `main`** (PR #5) y la **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
 **Siguiente paso: Fase 4 bis (borrado y archivado)**, o la Fase 5 (editor de movimiento).
 
@@ -16,7 +16,7 @@ Se han corregido cifras que se venían arrastrando mal desde la Fase 1. La conve
 - Se dice **de qué módulo**. El total del repositorio incluye los placeholders de Sync y AppCore, que no son de ninguna fase.
 - **La cifra vive solo aquí.** Repetirla en cada sección de fase es lo que la hizo derivar tres veces: las fases dicen «tests en verde» y quien quiera el número lo busca en esta línea.
 
-Medido el 2026-08-16: 119 funciones `@Test` que expanden a **143 casos ejecutados** — Domain 98, Persistence 36, DesignSystem 7, y 1 placeholder en Sync y otro en AppCore.
+Medido el 2026-08-16, con la Fase 4 terminada: **193 casos ejecutados** — Domain 113, Persistence 40, FeatureSummary 14, DesignSystem 7, AppCore 6, FeatureSupport 6, FeatureTransactions 6, y 1 placeholder en Sync.
 
 ---
 
@@ -788,8 +788,6 @@ Decisiones que conviene no reabrir:
 Dos fallos que solo el simulador encontró, y que ningún test de modelo habría cazado: un modificador sobre un `Group` que envuelve un `switch` se aplica a cada rama, así que el `.task` se cancelaba en el primer cambio de estado y la pantalla salía en blanco; y el mapa de nombres de cuenta no incluía las categorías, así que un movimiento nombraba su cuenta dos veces.
 
 **Lo que queda para la Fase 4 bis**: el **borrado** con su regla —sin movimientos se borra, con movimientos se archiva—, `archive` en bancos, y el botón ⊕, que sigue inerte hasta que la Fase 5 traiga el editor.
-
-Y el **formateo de dinero**: los componentes del design system reciben `String` porque el módulo no puede ver `Money`. Aquí se decide dónde vive el formateador, con la primera pantalla real delante.
 
 ### Fase 5 — Editor de movimiento
 

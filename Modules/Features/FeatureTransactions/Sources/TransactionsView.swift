@@ -17,9 +17,7 @@ public struct TransactionsView: View {
     ) {
         self._model = State(initialValue: model)
         self.formatter = formatter
-        self.dayFormat = Date.FormatStyle.dateTime
-            .day().month(.wide).year()
-            .locale(locale)
+        self.dayFormat = CalendarDate.longDayStyle(in: locale)
     }
 
     public var body: some View {
@@ -76,25 +74,17 @@ public struct TransactionsView: View {
                 .font(.rowTitle)
                 .foregroundStyle(.ink)
                 .multilineTextAlignment(.center)
+            // `observe`, not `load`: the stream ends when it fails, so retrying with a plain
+            // reload would repaint the figures and leave the screen without a subscription
+            // for good — the silent staleness this whole mechanism exists to prevent.
             PrimaryAction(String(localized: "transactions.retry", bundle: .module)) {
-                Task { await model.load() }
+                Task { await model.observe() }
             }
         }
         .padding(Spacing.screenMargin)
     }
 
-    /// A `CalendarDate` has no time zone, so it is turned into text at noon UTC: any other
-    /// hour could land on the day before or after depending on where it is read, which is the
-    /// bug the type exists to prevent.
     private func caption(for day: CalendarDate) -> String {
-        var components = DateComponents()
-        components.year = day.year
-        components.month = day.month
-        components.day = day.day
-        components.hour = 12
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
-        guard let instant = calendar.date(from: components) else { return day.description }
-        return instant.formatted(dayFormat)
+        day.formatted(dayFormat)
     }
 }

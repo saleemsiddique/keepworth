@@ -25,7 +25,7 @@ let baseSettings: SettingsDictionary = [
 /// feature, not here.
 ///
 /// `resourceGlobs` are relative to `path` and default to none: a glob matching nothing fails
-/// generation, and only the design system owns an asset catalog.
+/// generation, so a module without resources must not ask for them.
 func module(
     name: String,
     path: String,
@@ -83,8 +83,8 @@ let coreModules: [Target] =
             .target(name: "KeepworthPersistence"),
         ]
     )
-    // The only module with resources: the seven semantic colours live in an asset catalog so
-    // they carry a light and a dark variant.
+    // Its resources are the asset catalog: the seven semantic colours, each with a light and
+    // a dark variant. The modules with text carry a String Catalog instead.
     + module(
         name: "KeepworthDesignSystem",
         path: "Modules/Core/KeepworthDesignSystem",
@@ -169,8 +169,6 @@ let app: Target = .target(
 // com.apple.widgetkit-extension) arrives in phase 7. It will depend on Domain,
 // Persistence and DesignSystem: the single exception to the rule that only AppCore
 // touches the data layer, because it reads the database shared through the App Group.
-//
-// Feature targets are added in phase 4, once they exist.
 
 // Synthesized asset accessors are off because Tuist's accessor imports UIKit into the target
 // that owns the catalog, and `KeepworthDesignSystem` may import SwiftUI and nothing else. The

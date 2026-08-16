@@ -151,8 +151,11 @@ public struct SummaryView: View {
                 .font(.rowTitle)
                 .foregroundStyle(.ink)
                 .multilineTextAlignment(.center)
+            // `observe`, not `load`: the stream ends when it fails, so retrying with a plain
+            // reload would repaint the figures and leave the screen without a subscription
+            // for good — the silent staleness this whole mechanism exists to prevent.
             PrimaryAction(String(localized: "summary.retry", bundle: .module)) {
-                Task { await model.load() }
+                Task { await model.observe() }
             }
         }
         .padding(Spacing.screenMargin)
