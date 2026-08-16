@@ -105,6 +105,20 @@ El CI dispara en `pull_request` y en `push` a `main`: **empujar una rama sin abr
 
 Las PR se cierran con **commit de merge** y la rama se conserva. Ni squash, ni `--delete-branch`: cada fase queda como una unidad navegable en el historial.
 
+#### PR apiladas: se mergean de arriba abajo
+
+Una fase larga se parte en varias PR, cada una con la anterior como base. **Se mergean empezando por la de arriba** —la última— y bajando, de modo que la de más abajo acaba conteniendo a todas y una sola PR la lleva a `main`.
+
+Mergearlas en el orden natural, de abajo arriba, **no funciona en este repositorio**: GitHub solo reapunta la base de una PR apilada a `main` cuando se **borra** la rama anterior, y aquí las ramas se conservan. Cada PR se mergea entonces en su base y no en `main`, así que solo llega la primera y el resto se queda en las ramas intermedias sin que nada avise.
+
+Pasó con las cuatro PR de la Fase 4 (#8 a #11) y se resolvió con una PR de integración desde la rama que ya las contenía a todas. Antes de darlas por hechas:
+
+```bash
+git fetch origin
+git log --oneline origin/main -5          # ¿está lo que crees que está?
+git diff --stat origin/main origin/<rama-de-arriba>   # tiene que salir vacío
+```
+
 ### Cambiar una decisión
 
 Cambiar una regla no es editar el sitio donde la encontraste. Una decisión de este proyecto vive en varios archivos a la vez, y dejar uno atrás no rompe nada — solo hace que la documentación mienta, que es peor que no tenerla.
