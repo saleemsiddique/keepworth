@@ -100,7 +100,8 @@ let appCore: [Target] = module(
         .target(name: "KeepworthPersistence"),
         .target(name: "KeepworthSync"),
         .target(name: "KeepworthDesignSystem"),
-    ]
+    ],
+    resourceGlobs: ["Resources/**"]
 )
 
 let app: Target = .target(
@@ -112,6 +113,9 @@ let app: Target = .target(
     infoPlist: .extendingDefault(with: [
         "CFBundleDisplayName": "Keepworth",
         "UILaunchScreen": [:],
+        // Read by `KeepworthAppCore` instead of being hardcoded there: the identifier already
+        // has to match the entitlements file, and a third copy is a third place to drift.
+        "KeepworthAppGroup": .string(appGroup),
         "NSFaceIDUsageDescription":
             "Keepworth usa Face ID para que solo tú puedas ver tus finanzas.",
         "ITSAppUsesNonExemptEncryption": false,
