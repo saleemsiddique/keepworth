@@ -91,6 +91,18 @@ let coreModules: [Target] =
         resourceGlobs: ["Resources/**"]
     )
 
+// One folder per feature. A feature talks to the protocols in `Domain` and draws with
+// `DesignSystem`: it never sees `Persistence`, `Sync` or GRDB.
+let features: [Target] = module(
+    name: "FeatureSummary",
+    path: "Modules/Features/FeatureSummary",
+    dependencies: [
+        .target(name: "KeepworthDomain"),
+        .target(name: "KeepworthDesignSystem"),
+    ],
+    resourceGlobs: ["Resources/**"]
+)
+
 // Composition root: the only module allowed to know concrete implementations.
 let appCore: [Target] = module(
     name: "KeepworthAppCore",
@@ -100,6 +112,7 @@ let appCore: [Target] = module(
         .target(name: "KeepworthPersistence"),
         .target(name: "KeepworthSync"),
         .target(name: "KeepworthDesignSystem"),
+        .target(name: "FeatureSummary"),
     ],
     resourceGlobs: ["Resources/**"]
 )
@@ -144,5 +157,5 @@ let project = Project(
     name: "Keepworth",
     organizationName: "Keepworth",
     options: .options(disableSynthesizedResourceAccessors: true),
-    targets: coreModules + appCore + [app]
+    targets: coreModules + features + appCore + [app]
 )
