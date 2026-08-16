@@ -4,11 +4,12 @@ import KeepworthDomain
 
 @testable import KeepworthPersistence
 
-/// A seeded in-memory ledger with the four repositories wired to it.
+/// A seeded ledger seen through the four SQLite repositories, as opposed to `Ledger` in
+/// `KeepworthDomain`, which sees the same thing through in-memory doubles.
 ///
-/// In memory on purpose: these tests must never touch a real file, and an empty database per
-/// test is what keeps them independent.
-struct LedgerOnDisk {
+/// Stored, but never on disk: these tests must never touch a real file, and an empty database
+/// per test is what keeps them independent.
+struct StoredLedger {
     let database: AppDatabase
     let accounts: SQLiteAccountRepository
     let institutions: SQLiteInstitutionRepository
@@ -18,7 +19,7 @@ struct LedgerOnDisk {
     /// Pinned so a test can assert on timestamps instead of racing the clock.
     static let creationDate = Date(timeIntervalSince1970: 1_767_225_600)
 
-    init(now: @escaping @Sendable () -> Date = { LedgerOnDisk.creationDate }) throws {
+    init(now: @escaping @Sendable () -> Date = { StoredLedger.creationDate }) throws {
         database = try AppDatabase.inMemory()
         accounts = SQLiteAccountRepository(database: database, now: now)
         institutions = SQLiteInstitutionRepository(database: database, now: now)

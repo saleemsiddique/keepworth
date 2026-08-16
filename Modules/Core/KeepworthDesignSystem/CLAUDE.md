@@ -1,16 +1,20 @@
 # KeepworthDesignSystem
 
-Traduce la dirección estética "Ledger" a componentes SwiftUI. Es la **única** fuente de color y tipografía del proyecto.
+Traduce la dirección estética "Ledger" a componentes SwiftUI. Es la **única** fuente de color, tipografía y espaciado del proyecto.
 
 ## Contrato
 
-**Importa**: SwiftUI. Nada de negocio: este módulo no sabe qué es una cuenta ni un asiento.
+**Importa**: SwiftUI. Nada de negocio: este módulo no sabe qué es una cuenta ni un asiento. En particular **no ve `Money`**, así que todo componente que enseña dinero recibe un `String` ya formateado — convertir unidades menores en texto necesita divisa y locale, y eso es asunto de quien llama.
 
-**Expone**: tokens, tipografía y componentes reutilizables.
+Tampoco tiene String Catalog ni debe tenerlo: no sabe en qué idioma está la pantalla. Los componentes reciben `String` y quien los usa es quien localiza.
 
-## Los seis tokens
+**Expone**: tokens, tipografía, espaciado, los siete componentes y las dos galerías.
 
-Definidos como Color Sets con variante clara y oscura. **Ninguna feature usa un color literal ni un color del sistema.**
+## Los siete tokens
+
+Viven en `Resources/Tokens.xcassets` como Color Sets con variante clara y oscura, y se exponen en `Sources/Tokens/Colors.swift` como extensión de `ShapeStyle where Self == Color`, para que se lean como los de SwiftUI: `.foregroundStyle(.ink)`, `.background(.bg)`.
+
+**Ninguna feature usa un color literal ni un color del sistema.**
 
 | Token | Claro | Oscuro | Uso |
 |---|---|---|---|
@@ -19,17 +23,42 @@ Definidos como Color Sets con variante clara y oscura. **Ninguna feature usa un 
 | `ink` | `#141413` | `#F2F2EF` | Texto principal |
 | `inkSoft` | `#6E6E69` | `#8A8A85` | Texto secundario y metadatos |
 | `hairline` | `#E2E2DC` | `#232322` | Separadores de 0,5 pt |
-| `accent` | `#1E9E5A` | `#30D158` | Fósforo |
+| `accent` | `#1E9E5A` | `#30D158` | Fósforo: interactivo y dinero que entra |
+| `expense` | `#B3382C` | `#FF6B5E` | Dinero que sale |
 
-**Regla del acento**: el verde aparece solo en elementos interactivos y en dinero que **entra**. Los gastos van en `ink`. **Nunca rojo**: la app no regaña al usuario.
+**Regla del color en los importes**: marca **dirección, nunca juicio**.
+
+| Cuándo | Color | `AmountDirection` |
+|---|---|---|
+| El dinero **entra** | `accent` | `.incoming` |
+| El dinero **sale o se debe** — un gasto, un saldo negativo, el total gastado de un periodo | `expense` | `.outgoing` |
+| **Todo lo demás** — saldos positivos, y cifras derivadas como lo ahorrado | `ink` | `.neutral` |
+
+El verde aparece además en los elementos interactivos.
+
+`expense` espeja a `accent` en construcción: profundo y desaturado en claro, brillante en oscuro. **No es el rojo de alarma del sistema**, y esa contención es el punto: ninguno de los dos grita más que el otro.
+
+**Lleva signo todo importe que sea negativo o que tenga dirección**; un saldo positivo no lleva ninguno. Se pone aunque el color ya diga lo mismo: redundante a propósito, para que la cifra se lea igual en escala de grises, con daltonismo o copiada a un sitio sin color.
+
+Los componentes no deciden nada de esto: reciben el `String` con su signo y el `direction` ya elegido por quien llama.
+
+### Por qué hay recursos aquí y en ningún otro módulo
+
+El helper `module()` de `Project.swift` acepta `resourceGlobs:`, relativo al `path` del módulo, y este es el único que lo usa (`resourceGlobs: ["Resources/**"]`). Por defecto está vacío a propósito: un glob que no casa con nada hace fallar la generación.
+
+Además el proyecto lleva `disableSynthesizedResourceAccessors: true`. El accesor de assets que sintetiza Tuist **importa UIKit dentro del target dueño del catálogo**, y este módulo solo puede importar SwiftUI. La opción quita ese accesor y conserva `Bundle.module`, que es solo Foundation y es todo lo que `Colors.swift` necesita.
 
 ## Tipografía
 
-Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso.
+Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso. Todas se construyen desde un text style, no desde un tamaño fijo, así que Dynamic Type funciona sin una línea extra en cada pantalla.
 
-- **Importes**: SF Mono semibold con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse.
-- **Títulos y texto**: SF Pro.
-- **Metadatos y etiquetas**: SF Pro 11–13 pt, mayúsculas, tracking amplio.
+- **Importes**: SF Mono con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse. `headlineAmount` va en semibold; `rowAmount` en peso normal, porque una columna entera de importes en semibold pesa demasiado.
+- **Títulos y texto**: SF Pro (`rowTitle`, `rowSubtitle`, `primaryAction`).
+- **Metadatos y etiquetas**: `sectionCaption` es el text style `.caption` en peso medio —unos 12 pt con el tamaño de texto por defecto, y escala con Dynamic Type—, más mayúsculas y tracking amplio. Las tres cosas van juntas siempre, así que se aplican en `SectionCaption` en vez de ofrecerse sueltas.
+
+## Espaciado
+
+`Spacing` nombra las medidas por lo que separan, no como una escala de tallas, y solo están las que algún componente usa hoy. Cuando una pantalla de una fase posterior necesite un hueco que no esté, se añade con nombre — no se aproxima con el más parecido.
 
 ## Contrato de cada pantalla
 
@@ -45,8 +74,41 @@ Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso.
 
 ## Componentes
 
-`LedgerRow`, `HeadlineAmount`, `SectionCaption`, `Hairline`, `PrimaryAction`, `EmptyStateLine`, `LedgerTabBar`.
+| Componente | Firma |
+|---|---|
+| `Hairline` | `Hairline()` |
+| `SectionCaption` | `SectionCaption(_ text: String)` |
+| `HeadlineAmount` | `init(caption: String, amount: String, detail: String? = nil)` |
+| `LedgerRow` | `init(title: String, subtitle: String? = nil, symbolName: String? = nil, amount: String, direction: AmountDirection = .neutral)` |
+| `PrimaryAction` | `init(_ title: String, action: @escaping () -> Void)` |
+| `EmptyStateLine` | `EmptyStateLine(_ text: String)` |
+| `LedgerTabBar` | `init(selection: Binding<Tag>, leading: LedgerTabItem<Tag>, trailing: LedgerTabItem<Tag>, centerLabel: String, centerAction: @escaping () -> Void)` |
+
+Todos son tontos: pintan lo que reciben, no lo calculan.
+
+Dos decisiones que conviene no reabrir por costumbre:
+
+- **`HeadlineAmount` no se oculta a sí mismo.** El tap que redacta el patrimonio es estado de una pantalla, así que quien llama es quien aplica `.redacted(reason: .placeholder)`.
+- **`LedgerTabBar` es genérico sobre su tag.** No conoce los destinos de la app: nombrarlos aquí metería la navegación dentro del design system, y las dos cosas crecen a ritmos distintos.
+
+`LedgerRow` empezó con un `isIncoming: Bool`, y al añadirse el token `expense` apareció el tercer caso que el propio contrato preveía. Hoy es `AmountDirection` —`.incoming`, `.outgoing`, `.neutral`—, y **el módulo no tiene ningún flag booleano**. Que siga así.
 
 ## Verificación
 
-Cada componente lleva previews en **ambos temas**. La galería de previews es la herramienta de revisión visual del proyecto: si un componente nuevo no aparece en ella, no está terminado.
+Cada componente lleva previews en **ambos temas**. `ComponentGallery` es la herramienta de revisión visual del proyecto: si un componente nuevo no aparece en ella, no está terminado. `TokenGallery` enseña la paleta y las voces tipográficas.
+
+Las dos galerías son herramientas de desarrollo, no pantallas: su texto va con `Text(verbatim:)` o como dato de ejemplo, y **no entra en el String Catalog**.
+
+### Los tests importan UIKit, y el módulo no
+
+`Color("typo", bundle:)` nunca falla: devuelve un color de relleno, así que un asset mal escrito o no empaquetado se publicaría sin síntoma. `UIColor(named:in:compatibleWith:)` es la única API que admite no haber encontrado el color, y por eso `ColorTokenTests` importa UIKit.
+
+Es una excepción deliberada y acotada al target de tests. El contrato de arriba limita lo que importa el **módulo**, no sus tests.
+
+Los tests comprueban tres cosas por token, y cada una tapa un fallo silencioso distinto:
+
+1. **Que está en el bundle** — un nombre mal escrito o un recurso no empaquetado.
+2. **Que sus valores claro y oscuro son los hex documentados** — sin esto, un Color Set al que le falte la variante oscura pasaría: resuelve al valor claro en los dos temas.
+3. **Que el alfa es 1 en ambos** — un `"alpha": "0.500"` colado en un `Contents.json` pasa las dos anteriores y no se nota hasta que el color está encima de otra cosa.
+
+No hay tests de snapshot: meterían una dependencia externa, y solo GRDB está aprobada.

@@ -7,7 +7,7 @@ import Testing
 
 @Test("The first launch seed leaves a usable ledger on disk")
 func seedsAUsableLedger() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
 
     try await ledger.seed()
 
@@ -19,7 +19,7 @@ func seedsAUsableLedger() async throws {
 
 @Test("An entry and its lines are stored together and read back identical")
 func roundTripsAnEntry() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     try await ledger.seed()
     let cash = try await ledger.account(named: "Efectivo")
     let groceries = try await ledger.account(named: "Supermercado")
@@ -43,7 +43,7 @@ func roundTripsAnEntry() async throws {
 
 @Test("A derived balance matches the sum of the stored lines")
 func derivedBalanceMatchesStoredLines() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     try await ledger.seed()
     let cash = try await ledger.account(named: "Efectivo")
     let groceries = try await ledger.account(named: "Supermercado")
@@ -81,7 +81,7 @@ func derivedBalanceMatchesStoredLines() async throws {
 
 @Test("Lines of a deleted entry stop counting towards the balance")
 func deletedEntryStopsCounting() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     try await ledger.seed()
     let cash = try await ledger.account(named: "Efectivo")
     let groceries = try await ledger.account(named: "Supermercado")
@@ -118,7 +118,7 @@ func deletedEntryStopsCounting() async throws {
 
 @Test("Net worth over the stored ledger matches what the report says was saved")
 func netWorthMatchesTheReportOnDisk() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     try await ledger.seed()
     let cash = try await ledger.account(named: "Efectivo")
     let groceries = try await ledger.account(named: "Supermercado")
@@ -153,7 +153,7 @@ func netWorthMatchesTheReportOnDisk() async throws {
 
 @Test("A future-dated movement is stored but stays out of today's net worth")
 func futureMovementIsStoredButNotCounted() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     try await ledger.seed()
     let cash = try await ledger.account(named: "Efectivo")
     let rent = try await ledger.account(named: "Vivienda")
@@ -174,7 +174,7 @@ func futureMovementIsStoredButNotCounted() async throws {
 
 @Test("Reading lines before the ledger has a currency fails instead of guessing one")
 func refusesToReadLinesWithoutBaseCurrency() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let account = try Account(name: "Efectivo", kind: .asset, currency: .eur)
     try await ledger.accounts.save(account)
 
@@ -185,7 +185,7 @@ func refusesToReadLinesWithoutBaseCurrency() async throws {
 
 @Test("Re-saving an entry with fewer lines buries the ones it dropped")
 func resavingBuriesDroppedLines() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     try await ledger.seed()
     let cash = try await ledger.account(named: "Efectivo")
     let groceries = try await ledger.account(named: "Supermercado")
@@ -224,7 +224,7 @@ func resavingBuriesDroppedLines() async throws {
 
 @Test("Saving an entity whose row is soft-deleted does not resurrect it")
 func savingDoesNotClearATombstone() async throws {
-    let ledger = try LedgerOnDisk()
+    let ledger = try StoredLedger()
     let account = try Account(name: "Efectivo", kind: .asset, currency: .eur)
     try await ledger.accounts.save(account)
     let deletionDate = Date(timeIntervalSince1970: 1_767_312_000)

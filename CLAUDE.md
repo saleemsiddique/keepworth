@@ -64,8 +64,10 @@ Los bancos sí son entidad propia (`Institution`): agrupan cuentas y dan un tota
 
 ### Diseño
 
-- **Cero colores literales fuera de `KeepworthDesignSystem`.** Solo los seis tokens semánticos: `bg`, `surface`, `ink`, `inkSoft`, `hairline`, `accent`.
-- El acento verde aparece únicamente en elementos interactivos y en dinero que entra. **Los gastos van en `ink`, nunca en rojo** — la app no regaña al usuario.
+- **Cero colores literales fuera de `KeepworthDesignSystem`.** Solo los siete tokens semánticos: `bg`, `surface`, `ink`, `inkSoft`, `hairline`, `accent`, `expense`.
+- **El color de un importe marca dirección, nunca juicio**: `accent` cuando el dinero **entra**, `expense` cuando **sale o se debe** —un gasto, un saldo negativo, el total gastado de un periodo—, e `ink` en **todo lo demás**, incluidos los saldos positivos y las cifras derivadas como lo ahorrado. El verde aparece además en los elementos interactivos.
+- `expense` está construido para espejar a `accent`, no para alarmar: profundo y desaturado en claro, brillante en oscuro, igual que el verde. Ninguno de los dos grita más que el otro.
+- **Lleva signo todo importe que sea negativo o que tenga dirección**; un saldo positivo no lleva ninguno. El signo se pone aunque el color ya diga lo mismo: la redundancia es deliberada, porque la cifra tiene que leerse igual en escala de grises, con daltonismo o copiada a un sitio sin color.
 - Sin tarjetas ni sombras: la jerarquía se construye con espacio en blanco y hairlines de 0,5 pt.
 - Los importes usan SF Mono con `.monospacedDigit()`.
 - Una acción primaria por pantalla; el resto vive en gestos nativos.
@@ -139,7 +141,9 @@ Modules/Features/          una carpeta por feature (Fase 4)
 Apps/KeepworthWidgets/     widget extension (Fase 7)
 ```
 
-Cada módulo tiene `Sources/` y `Tests/`. Los módulos Core llevan su propio `CLAUDE.md` con el contrato de la capa: léelo antes de tocarlos.
+Cada módulo tiene `Sources/` y `Tests/`. `KeepworthDesignSystem` lleva además `Resources/` con el catálogo de tokens, y es el único: los recursos se declaran con `resourceGlobs:` en `Project.swift`, que por defecto está vacío porque un glob que no casa con nada hace fallar la generación.
+
+Los módulos Core llevan su propio `CLAUDE.md` con el contrato de la capa: léelo antes de tocarlos.
 
 ## Tests
 

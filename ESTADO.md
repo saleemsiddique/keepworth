@@ -4,9 +4,18 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-13 — **Fase 2 (Persistencia) mergeada a `main`** (PR #4): esquema, migración v1, records y los cuatro repositorios; 99 tests en verde. Antes, la **Fase 1 (Dominio)**, mergeada el 2026-08-08 (PR #2); ver sección 6 bis. Antes, el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-16 — **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
-**Siguiente paso: Fase 3 (Design System).**
+**Siguiente paso: Fase 3.5 (extracción de skills).**
+
+### Cómo se cuentan los tests en este documento
+
+Se han corregido cifras que se venían arrastrando mal desde la Fase 1. La convención, para que deje de deformarse:
+
+- Se dice **casos ejecutados**, no atributos `@Test` escritos. Un test parametrizado es una función y muchos casos, y `xcodebuild` cuenta los casos.
+- Se dice **de qué módulo**. El total del repositorio incluye los placeholders de Sync y AppCore, que no son de ninguna fase.
+
+Medido el 2026-08-16: 99 funciones `@Test` que expanden a **123 casos ejecutados** — Domain 90, Persistence 24, DesignSystem 7, y 1 placeholder en Sync y otro en AppCore.
 
 ---
 
@@ -23,19 +32,28 @@ https://claude.ai/code/artifact/fc6c746d-92e4-408e-bc33-32786328d709
 
 (El artefacto usa el nombre provisional "WalletOS". El nombre definitivo es **Keepworth**.)
 
+Dos avisos sobre ese artefacto, que es anterior al código y ya no manda en todo:
+
+- **En color manda la sección 7**, no el artefacto. Está dibujado sin el token `expense`, con los gastos en `ink`, que es la regla que se sustituyó el 2026-08-16.
+- **En importes manda la sección 8**: el artefacto los dibuja sin signo, y hoy todo importe con dirección lo lleva.
+
+Para lo demás —composición, espacio en blanco, jerarquía, tono general— sigue siendo la referencia.
+
 ---
 
 ## 2. Estado actual
 
 ### Lo que existe
 
-La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila sin un solo warning, los cinco tests placeholder pasan, el lint de formato sale limpio y **el CI está en verde**. Lo que falló y se corrigió está en la sección 3.
+La **Fase 0 está verificada y mergeada a `main`** (2026-08-04, PR #1). Se había redactado desde una máquina Windows sin Xcode ni Tuist, así que hasta esa fecha ni una línea había sido compilada. Ya lo está: el proyecto genera, compila sin un solo warning, los cinco tests placeholder que había **entonces** pasaban, el lint de formato sale limpio y **el CI está en verde**. Lo que falló y se corrigió está en la sección 3. (De aquellos cinco quedan dos: los de Domain, Persistence y DesignSystem fueron sustituidos por tests reales al construir cada capa.)
 
-La **Fase 1 (Dominio)** y la **Fase 2 (Persistencia)** están completadas y **mergeadas a `main`**: la primera el 2026-08-08 (PR #2), la segunda el 2026-08-13 (PR #4). 99 tests en verde entre las dos. Cómo quedó el dominio y por qué está en la sección 6 bis; las decisiones de persistencia, en la sección 9.
+La **Fase 1 (Dominio)** y la **Fase 2 (Persistencia)** están completadas y **mergeadas a `main`**: la primera el 2026-08-08 (PR #2), la segunda el 2026-08-13 (PR #4). Cómo quedó el dominio y por qué está en la sección 6 bis; las decisiones de persistencia, en la sección 9.
+
+La **Fase 3 (Design System)** está construida: build limpio, 123 casos de test en verde y lint limpio. Las decisiones que se tomaron al escribirla están en la sección 9.
 
 Entre medias, el PR #3 reescribió los comentarios del código en inglés y los redujo. Esa convención ya es regla dura: **todo lo que va dentro de un archivo de código está en inglés** —comentarios, identificadores y nombres de test, en Swift y también en `Project.swift`, el CI, los entitlements y los hooks—, y el español se queda en la documentación y en la conversación. Está en `CLAUDE.md` § «Idioma del código», con sus dos excepciones.
 
-**La siguiente fase por empezar es la 3 (Design System).** Nada de ella está escrito.
+**La siguiente fase por empezar es la 3.5 (extracción de skills).**
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -61,11 +79,11 @@ Apps/Keepworth/Keepworth.entitlements        App Group + CloudKit
 Modules/Core/KeepworthDomain/                CLAUDE.md + la capa completa (Fase 1)
 Modules/Core/KeepworthPersistence/           CLAUDE.md + la capa completa (Fase 2)
 Modules/Core/KeepworthSync/                  CLAUDE.md + placeholder + test
-Modules/Core/KeepworthDesignSystem/          CLAUDE.md + placeholder + test
+Modules/Core/KeepworthDesignSystem/          CLAUDE.md + la capa completa (Fase 3)
 Modules/KeepworthAppCore/                    CLAUDE.md + RootView + test
 ```
 
-Los archivos `*Module.swift` que quedan en Sync y DesignSystem son **andamiaje deliberado**: existen solo para que el target enlace y sea testeable. Cada uno se elimina cuando su módulo tenga contenido real, como ya se hizo con el del dominio.
+El `SyncModule.swift` que queda en Sync es **andamiaje deliberado**: existe solo para que el target enlace y sea testeable. Se elimina cuando el módulo tenga contenido real, como ya se hizo con los de Domain y DesignSystem.
 
 ### Lo que no existe todavía
 
@@ -262,6 +280,8 @@ Que las categorías compartan tabla con las cuentas es fontanería, no un concep
 **Los bancos son tabla propia.** Un banco no guarda dinero ni recibe movimientos: solo agrupa cuentas y da un total por entidad. Meterlo en `account` obligaría a inventar una cuenta que no es una cuenta.
 
 ### Tablas
+
+Este bloque explica el esquema; **la fuente autoritativa es `Modules/Core/KeepworthPersistence/Sources/Database/Migrations.swift`**. La única diferencia con lo que se ejecuta: la migración escribe `id TEXT PRIMARY KEY NOT NULL`, porque SQLite admite NULL en una clave primaria textual por compatibilidad histórica.
 
 ```sql
 institution(                        -- BBVA, Trade Republic, MyInvestor
@@ -486,7 +506,7 @@ La Fase 2 lo resolvió separando records y entidades: el record conforma `Fetcha
 
 ## 7. Design System
 
-Los seis tokens, definidos como Color Sets con variante clara y oscura. **Ninguna feature usa un color literal ni un color del sistema.**
+Los siete tokens, definidos como Color Sets con variante clara y oscura. **Ninguna feature usa un color literal ni un color del sistema.**
 
 | Token | Claro | Oscuro | Uso |
 |---|---|---|---|
@@ -495,17 +515,28 @@ Los seis tokens, definidos como Color Sets con variante clara y oscura. **Ningun
 | `ink` | `#141413` | `#F2F2EF` | Texto principal |
 | `inkSoft` | `#6E6E69` | `#8A8A85` | Texto secundario y metadatos |
 | `hairline` | `#E2E2DC` | `#232322` | Separadores de 0,5 pt |
-| `accent` | `#1E9E5A` | `#30D158` | Fósforo |
+| `accent` | `#1E9E5A` | `#30D158` | Fósforo: interactivo y dinero que entra |
+| `expense` | `#B3382C` | `#FF6B5E` | Dinero que sale |
 
-**Regla del acento**: el verde aparece únicamente en elementos interactivos y en dinero que **entra**. Los gastos van en `ink`. **Nunca rojo** — la app no regaña al usuario.
+> El token `expense` **no tiene nada que ver con `AccountKind.expense`** de la sección 6, aunque compartan palabra. El token pinta la **dirección de un importe**; el `kind` dice qué es una cuenta. Una línea contra una categoría de gasto puede perfectamente ir en `accent`: si estás corrigiendo un gasto, ese dinero vuelve.
+
+### Regla del color en los importes
+
+**El color marca dirección, nunca juicio.** `accent` cuando el dinero **entra**, `expense` cuando **sale o se debe** —un gasto, un saldo negativo, el total gastado de un periodo—, e `ink` en **todo lo demás**, incluidos los saldos positivos y las cifras derivadas como lo ahorrado. El verde aparece además en los elementos interactivos.
+
+`expense` está construido para **espejar** a `accent`, no para alarmar: profundo y desaturado en claro, brillante en oscuro, igual que el verde. La idea es que ninguno grite más que el otro.
+
+> Esto sustituye a la regla anterior —«los gastos van en `ink`, nunca rojo, la app no regaña al usuario»—, revisada con el usuario el 2026-08-16 al ver la galería renderizada. El motivo del cambio: sin un antónimo del verde, la dirección del dinero solo se leía en el signo, y un gasto y un total del periodo se veían idénticos. Lo que se conserva de la intención original es el **tono**: el rojo elegido no es el rojo de alarma del sistema.
+
+**Lleva signo todo importe que sea negativo o que tenga dirección**; un saldo positivo no lleva ninguno. Se pone aunque el color ya diga lo mismo: la redundancia es deliberada, para que la cifra se lea igual en escala de grises, con daltonismo, o copiada a un sitio sin color. `−937,30` en rojo, `+2.100,00` en verde, `20.500,00` a secas en `ink`.
 
 ### Tipografía
 
 Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso.
 
-- **Importes**: SF Mono semibold con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse.
+- **Importes**: SF Mono con `.monospacedDigit()`, para que los dígitos no bailen al actualizarse. Semibold en la cifra grande de cabecera; peso normal en las de fila, que si no una columna entera de importes pesa demasiado.
 - **Títulos y texto**: SF Pro.
-- **Metadatos y etiquetas**: SF Pro 11–13 pt, mayúsculas, tracking amplio.
+- **Metadatos y etiquetas**: SF Pro pequeño —el text style `.caption`, que escala con Dynamic Type—, mayúsculas y tracking amplio.
 
 ### Contrato de cada pantalla
 
@@ -519,11 +550,11 @@ Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso.
 
 `contentTransition(.numericText())` en las cifras grandes · SF Symbols en peso `.light`, monocromos y pequeños · un único haptic ligero al guardar · tap en el patrimonio lo oculta con `redacted`.
 
-### Componentes a construir
+### Componentes
 
-`LedgerRow`, `HeadlineAmount`, `SectionCaption`, `Hairline`, `PrimaryAction`, `EmptyStateLine`, `LedgerTabBar`.
+`Hairline`, `SectionCaption`, `HeadlineAmount`, `LedgerRow`, `PrimaryAction`, `EmptyStateLine`, `LedgerTabBar`. Los siete están construidos; sus firmas están en el `CLAUDE.md` del módulo.
 
-Cada uno con previews en **ambos temas**. Si un componente nuevo no aparece en la galería de previews, no está terminado.
+Cada uno con previews en **ambos temas**. Si un componente nuevo no aparece en `ComponentGallery`, no está terminado.
 
 ---
 
@@ -546,8 +577,8 @@ Dos destinos en la barra inferior con el botón de añadir en el **centro exacto
 │   Cartera  3.000,00 │
 │ ─────────────────── │
 │ ESTE MES            │
-│ Gastado     937,30  │
-│ Ahorrado  1.162,70 ›│
+│ Gastado    −937,30  │
+│ Ahorrado +1.162,70 ›│
 │ ─────────────────── │
 │ RECIENTE            │
 │ Mercadona   −42,30  │
@@ -556,24 +587,35 @@ Dos destinos en la barra inferior con el botón de añadir en el **centro exacto
 └─────────────────────┘
 ```
 
+Tres cosas distintas conviven en esa pantalla, y conviene no confundirlas:
+
+- **Saldos positivos** (`BBVA 20.500,00`, `Nómina 1.200,00`): un estado, no un movimiento. Sin signo y en `ink`.
+- **Saldos negativos** (`Visa −320,45`): llevan su menos y van en `expense`. Es una deuda, y entre saldos positivos en `ink` se pasaría por alto justo lo que resta del patrimonio.
+- **Dinero que se mueve** (`Mercadona −42,30`): signo y color, `expense` al salir y `accent` al entrar.
+- **`Gastado` y `Ahorrado`**: llevan signo porque tienen dirección, pero solo `Gastado` va en `expense`. **`Ahorrado` va en `ink`**: es una cifra derivada, no dinero que haya entrado de ningún sitio. Pintarla de verde diría que has ingresado 1.162,70, y no es cierto.
+
+Resumido, y en este orden: **el signo aparece cuando la cifra es negativa o tiene dirección**; un saldo positivo no lleva ninguno. **El color lo pone `expense` cuando el dinero sale o se debe, `accent` cuando entra, e `ink` en todo lo demás** — incluida una cifra derivada como lo ahorrado.
+
 Al tocar el bloque «Este mes» se empuja el informe, que es una pantalla de detalle y no un destino de la barra:
 
 ```
 ┌─────────────────────┐
 │ ‹ Enero 2026 ›    ≡ │
 │ ─────────────────── │
-│ INGRESOS  2.100,00  │
-│   Nómina  2.100,00  │
+│ INGRESOS +2.100,00  │
+│   Nómina +2.100,00  │
 │ ─────────────────── │
-│ GASTOS      937,30  │
-│   Vivienda  800,00  │
-│   Transporte 60,00  │
-│   Supermerc. 42,30  │
-│   Restaur.   35,00  │
+│ GASTOS     −937,30  │
+│   Vivienda −800,00  │
+│   Transport −60,00  │
+│   Supermerc −42,30  │
+│   Restaur.  −35,00  │
 │ ─────────────────── │
-│ AHORRADO  1.162,70  │
+│ AHORRADO +1.162,70  │
 └─────────────────────┘
 ```
+
+Aquí sí: los ingresos en `accent`, los gastos en `expense`, y `AHORRADO` en `ink` por lo mismo que en Resumen — es la resta de los dos, no dinero que haya entrado.
 
 El informe y el patrimonio no pueden contradecirse: lo ahorrado en el periodo es exactamente lo que varió el patrimonio en él.
 
@@ -619,7 +661,9 @@ Proyecto generado, build en verde, los cinco tests placeholder pasando, lint lim
 
 `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine` y las reglas de balance. Protocolos `InstitutionRepository`, `AccountRepository` y `EntryRepository`. Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`.
 
-70 tests en verde, lint limpio y el revisor de arquitectura sin hallazgos. `DomainModule.swift` eliminado. El único `import` de toda la capa es `Foundation` en `Identifier.swift`, y está solo por `UUID`.
+Lint limpio y el revisor de arquitectura sin hallazgos. `DomainModule.swift` eliminado. El único `import` de toda la capa es `Foundation` en `Identifier.swift`, y está solo por `UUID`.
+
+> El PR #2 anotó «70 tests en verde». Era el total del repositorio contando atributos `@Test`, no casos del módulo: la convención de arriba llegó después. La cifra vigente de Domain está en la cabecera.
 
 `SetOpeningBalance` no estaba en el plan original y se añadió al revisar: sin él no había forma de dar de alta una cuenta con su saldo de partida sin componer líneas a mano desde la UI, que es justo lo que el contrato del módulo prohíbe.
 
@@ -637,7 +681,9 @@ Proyecto generado, build en verde, los cinco tests placeholder pasando, lint lim
 
 Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero indicada arriba. Migración `v1` con el esquema entero de la sección 6, incluidas la vista `live_entry_line` y los índices parciales. Records GRDB y las cuatro implementaciones de repositorio, **sin un solo tipo de GRDB en la API pública**. Tests contra base de datos en memoria.
 
-99 tests en verde y lint limpio.
+Lint limpio.
+
+> El PR #4 anotó «99 tests en verde», y también era el total del repositorio en atributos `@Test`, no casos de Persistence. La cifra vigente está en la cabecera.
 
 **Decisiones tomadas al escribirla:**
 
@@ -653,24 +699,46 @@ Conexión GRDB con `DatabasePool` en el App Group y la protección de fichero in
 
 **Lo que queda fuera a propósito**: el borrado (con su regla de «sin movimientos se borra, con movimientos se archiva») llega en la Fase 4, junto con la pantalla que lo pide. Hoy **no existe ninguna operación de borrado**: `AccountRepository.archive` es lo único que hay, y el único `deleted_at` que se escribe es el que entierra las líneas que un asiento reguardado ya no tiene. `archive` en bancos y `ValueObservation` tampoco están.
 
-### Fase 3 — Design System
+### Fase 3 — Design System — **construida (2026-08-15)**
 
-Tokens, tipografía, componentes y una galería de previews que sirva de referencia visual y de verificación rápida en ambos temas.
+Tokens en `Resources/Tokens.xcassets`, tipografía, espaciado, los siete componentes y dos galerías de previews: `TokenGallery` para la paleta y las voces, `ComponentGallery` para los componentes en contexto. Build sin warnings, 123 casos de test en verde y lint limpio.
+
+**Decisiones tomadas al escribirla:**
+
+- **Los tokens son Color Sets, no colores en código.** Es lo que ya decía este documento, y obligó a añadir `resourceGlobs:` al helper `module()` de `Project.swift`, relativo al `path` del módulo. Por defecto vacío y no fijo para todos: un glob que no casa con nada hace fallar la generación, y `KeepworthDomain` no debe llevar recursos ni por accidente.
+- **`disableSynthesizedResourceAccessors: true` en el proyecto.** El accesor de assets que sintetiza Tuist **importa UIKit dentro del target dueño del catálogo**, y el design system solo puede importar SwiftUI. La opción quita ese accesor y conserva `Bundle.module`, que es solo Foundation y es todo lo que hace falta.
+- **Los tests del design system importan UIKit; el módulo no.** `Color("typo", bundle:)` nunca falla —devuelve un color de relleno—, así que un asset mal escrito se publicaría sin síntoma. `UIColor(named:in:compatibleWith:)` es la única API que admite no haberlo encontrado. Se comprueban tres cosas por token: que está en el bundle, que sus valores claro y oscuro son los hex de la sección 7, y que ninguno es translúcido. Sin la segunda, un Color Set sin variante oscura pasaría, porque resuelve al valor claro en los dos temas.
+- **Nada de formateo de dinero todavía.** Los componentes reciben un `String` ya formateado. El módulo no puede ver `Money`, y decidir dónde vive el formateador sin una sola pantalla delante sería inventarse el patrón. Se resuelve en la Fase 4.
+- **Las galerías viven en `Sources/`, no en un target de app aparte.** Cero fontanería en `Project.swift` y se abren desde el canvas de Xcode. Su texto va con `Text(verbatim:)` o como dato de ejemplo: son herramientas de desarrollo y **no entran en el String Catalog**.
+- **Las tipografías se construyen desde text styles, no desde tamaños fijos**, para que Dynamic Type funcione sin una línea extra en cada pantalla.
+- **`Spacing` nombra las medidas por lo que separan**, y solo están las que algún componente usa hoy. Una escala de tallas inventada para pantallas que no existen es justo lo que YAGNI prohíbe.
+- **`LedgerTabBar` es genérico sobre su tag**: no conoce los destinos de la app. Nombrarlos ahí metería la navegación dentro del design system.
+- **Un séptimo token, `expense`, y el fin de la regla «nunca rojo»** (2026-08-16, al revisar la galería renderizada). El razonamiento completo y el porqué está en la sección 7. Arrastró dos cosas: `LedgerRow.isIncoming` pasó a ser el `enum AmountDirection` —era exactamente el tercer caso que el contrato del módulo dejaba previsto—, y se fijó que **todo importe lleva signo** aunque el color ya diga la dirección.
+- **La galería agrupa las cuentas por banco**, con las hijas indentadas, como manda la sección 8. Estaba escrita como lista plana con el banco de subtítulo, que es justo lo que la decisión de agrupar existía para sustituir. La indentación la aplica quien llama: es el único sitio que anida filas, y abstraerlo con un solo uso sería inventarse el patrón.
 
 ### Fase 3.5 — Extracción de skills
 
 **Punto de parada deliberado.** Con dominio, persistencia y design system construidos, los patrones que se repiten son observables en lugar de imaginados. Se extraen las skills citando archivos reales del repo:
 
-- declarar un módulo nuevo en `Project.swift`
+- declarar un módulo nuevo en `Project.swift`, con o sin `resourceGlobs:`
 - añadir una migración GRDB
 - crear una feature con su modelo observable y sus previews
-- añadir un componente al design system
+- añadir un componente al design system, con sus previews en ambos temas
+- añadir un token de color: catálogo, `Colors.swift`, test, `TokenGallery` y las tres tablas de la documentación — cinco sitios que hoy hay que acordarse de tocar a mano
 
 Y se endurece el `CLAUDE.md` raíz con lo que haya fallado en las fases 1 a 3.
 
 ### Fase 4 — Resumen y Movimientos
 
 `FeatureSummary` y `FeatureTransactions` con SwiftUI y `@Observable`, más la pantalla de informe que se empuja desde Resumen. Barra inferior con ⊕ centrado y Ajustes en toolbar. Observación reactiva con `ValueObservation` de GRDB para que la UI se refresque sola. **Localización EN/ES desde la primera cadena**, sin textos incrustados.
+
+**Empieza por aquí: hoy no hay forma de leer un asiento.** Lo destapó la auditoría del 2026-08-15 y no figuraba como pendiente en ninguna parte. `EntryRepository` solo tiene `save(_:)` y `lines(matching:)`; `EntryRecord` es el único record sin `toDomain()`, porque solo se escribe; y `EntryLine` no referencia a su `Entry`, así que de una consulta de líneas no se puede reconstruir ni la fecha, ni el beneficiario, ni la agrupación. Con eso salen el patrimonio y el informe —que agrupan por cuenta— pero **no sale la lista de Movimientos ni el editor de la Fase 5**.
+
+Hay que ampliar `EntryRepository` con una lectura de asientos, dar `toDomain()` a `EntryRecord`, y decidir cómo llega una línea a su asiento: un `entryID` en `EntryLine`, o un tipo de lectura que devuelva el asiento con sus líneas dentro. Es una decisión de dominio y se habla antes de escribirla.
+
+Lo demás que la fase tiene que traer y hoy no existe: el **borrado** con su regla —sin movimientos se borra, con movimientos se archiva—, `archive` en bancos y `ValueObservation`.
+
+Y el **formateo de dinero**: los componentes del design system reciben `String` porque el módulo no puede ver `Money`. Aquí se decide dónde vive el formateador, con la primera pantalla real delante.
 
 ### Fase 5 — Editor de movimiento
 
@@ -722,6 +790,7 @@ Criterios de aceptación por fase:
 - **Entorno de IA** — editar un `.swift` deja el archivo formateado sin intervención; tocar `Project.swift` regenera el proyecto; el agente revisor detecta un `import GRDB` introducido a propósito dentro de una feature.
 - **Dominio** — un asiento cuyas líneas no suman cero es rechazado con error; un asiento de una sola línea es rechazado; sumar `Money` de divisas distintas falla en vez de aproximar; una cuenta de gasto o ingreso con banco es rechazada; el patrimonio neto es correcto mezclando activo y pasivo, y **no varía** al crear, renombrar o archivar una categoría; el `netWorthChange` del informe coincide al céntimo con la variación del patrimonio en el periodo, **también cuando dentro de él se declara el saldo inicial de una cuenta nueva**.
 - **Persistencia** — crear y editar cuentas y movimientos sobre base de datos en memoria; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone. El criterio de **borrado** —marca `deleted_at` y la fila desaparece de las consultas— se verifica en la Fase 4, que es donde se implementa.
+- **Design System** — cada uno de los siete tokens está en el bundle y resuelve a sus dos valores documentados; `ComponentGallery` revisada en claro y oscuro; y `grep` de colores literales (`Color(red:`, `Color.gray`, `.foregroundColor`…) sin un solo resultado fuera de `Colors.swift`. Esa última es la comprobación mecánica de «cero colores literales fuera del design system», y conviene repetirla en cada fase de UI.
 - **UI** — galería de previews revisada en tema claro y oscuro; recorrido manual en simulador de crear cuenta → registrar gasto → verlo en Resumen y en Movimientos → editarlo → borrarlo, con el patrimonio actualizándose en cada paso.
 - **Import/Export** — exportar, borrar la base de datos, reimportar, y comprobar que el patrimonio y el número de movimientos coinciden exactamente.
 - **Sync** — dos simuladores con la misma cuenta de iCloud; un cambio en uno aparece en el otro; editar el mismo movimiento en ambos resuelve sin duplicar ni perder datos.
