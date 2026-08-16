@@ -12,9 +12,17 @@ Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta cap
 - Entidades: `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine`.
 - Tipos de apoyo: `CalendarDate` —fecha sin hora ni zona, la de `occurredOn`— e `Identifier<T>`, que da `AccountID`, `EntryID`, `InstitutionID` y `EntryLineID`.
 - Protocolos de repositorio: `InstitutionRepository`, `AccountRepository`, `EntryRepository`, `SettingsRepository`. Definidos aquí, implementados en `KeepworthPersistence`.
+- `LedgerChanges`, que avisa de que el libro se movió sin decir qué. Es lo que permite que una pantalla se refresque sola sin que cada camino de escritura tenga que acordarse de a quién avisar.
+- `MoneyFormatter`, la única forma de convertir `Money` en texto.
 - Dos formas de preguntar por movimientos, y no son intercambiables: `EntryLineQuery` pregunta **cuánto suman** unas cuentas y responde con patas sueltas; `EntryQuery` pregunta **qué pasó** y responde con asientos enteros.
 - Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
 - Errores de dominio descriptivos, nunca `nil` para señalar fallo.
+
+**`Decimal` solo aparece en `MoneyFormatter`, y solo en el último paso hacia el texto.** La aritmética sigue siendo `Int64`, que es lo que permite que un asiento sume exactamente cero. Formatear es el único sitio donde una representación decimal no solo es segura sino obligatoria, porque `NumberFormatter` habla decimales. Un `Decimal` en cualquier otro archivo del dominio es un bug.
+
+`MoneyFormatter` vive aquí y no en una capa de presentación porque el design system no puede ver `Money`, y cada feature acabaría con su copia. Cuántos decimales tiene una divisa es un hecho de la divisa, no de la pantalla.
+
+**`LedgerChanges` no dice qué cambió, y es deliberado.** Una pantalla ya sabe cargar lo que enseña; lo que no puede saber es *cuándo* repetirlo. Una señal por consulta refrescaría menos, pero obligaría a una variante observada de cada consulta y a un doble fiel de cada una, para evitar un coste que nadie nota. Devuelve `AsyncThrowingStream` en vez de terminar en silencio: una secuencia que se acaba sola deja una pantalla enseñando cifras que ya no se actualizarán, sin nada que lo diga.
 
 **No existe un `Entry` parcial.** `Entry.init` valida que las líneas sumen cero, así que leer un asiento es leerlo entero. De ahí sale la regla menos obvia de `EntryQuery`: filtrar por cuenta elige **qué asientos**, nunca qué líneas. Un gasto tiene una pata en la cuenta y otra en la categoría, y devolver solo la que casa con el filtro produce un asiento que no cuadra y que el init rechaza.
 
