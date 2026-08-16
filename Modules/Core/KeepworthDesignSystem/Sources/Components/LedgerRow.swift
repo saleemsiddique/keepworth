@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// An enum and not a pair of booleans: there are three cases, and `isIncoming: false` could
 /// never say whether a figure was an expense or simply a total.
-public enum AmountDirection {
+public enum AmountDirection: Hashable, Sendable {
     /// Money coming in. Accent green.
     case incoming
     /// Money going out: an expense, a negative balance, what a period spent. Red.

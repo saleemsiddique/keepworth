@@ -25,7 +25,7 @@ let baseSettings: SettingsDictionary = [
 /// feature, not here.
 ///
 /// `resourceGlobs` are relative to `path` and default to none: a glob matching nothing fails
-/// generation, and only the design system owns an asset catalog.
+/// generation, so a module without resources must not ask for them.
 func module(
     name: String,
     path: String,
@@ -83,11 +83,46 @@ let coreModules: [Target] =
             .target(name: "KeepworthPersistence"),
         ]
     )
-    // The only module with resources: the seven semantic colours live in an asset catalog so
-    // they carry a light and a dark variant.
+    // Its resources are the asset catalog: the seven semantic colours, each with a light and
+    // a dark variant. The modules with text carry a String Catalog instead.
     + module(
         name: "KeepworthDesignSystem",
         path: "Modules/Core/KeepworthDesignSystem",
+        resourceGlobs: ["Resources/**"]
+    )
+
+// One folder per feature. A feature talks to the protocols in `Domain` and draws with
+// `DesignSystem`: it never sees `Persistence`, `Sync` or GRDB.
+//
+// `FeatureSupport` is the exception in shape but not in rights: it is a feature-layer module
+// that holds what two screens both draw, and it may import exactly what a feature may.
+let features: [Target] =
+    module(
+        name: "FeatureSupport",
+        path: "Modules/Features/FeatureSupport",
+        dependencies: [
+            .target(name: "KeepworthDomain"),
+            .target(name: "KeepworthDesignSystem"),
+        ]
+    )
+    + module(
+        name: "FeatureSummary",
+        path: "Modules/Features/FeatureSummary",
+        dependencies: [
+            .target(name: "KeepworthDomain"),
+            .target(name: "KeepworthDesignSystem"),
+            .target(name: "FeatureSupport"),
+        ],
+        resourceGlobs: ["Resources/**"]
+    )
+    + module(
+        name: "FeatureTransactions",
+        path: "Modules/Features/FeatureTransactions",
+        dependencies: [
+            .target(name: "KeepworthDomain"),
+            .target(name: "KeepworthDesignSystem"),
+            .target(name: "FeatureSupport"),
+        ],
         resourceGlobs: ["Resources/**"]
     )
 
@@ -100,7 +135,10 @@ let appCore: [Target] = module(
         .target(name: "KeepworthPersistence"),
         .target(name: "KeepworthSync"),
         .target(name: "KeepworthDesignSystem"),
-    ]
+        .target(name: "FeatureSummary"),
+        .target(name: "FeatureTransactions"),
+    ],
+    resourceGlobs: ["Resources/**"]
 )
 
 let app: Target = .target(
@@ -112,6 +150,9 @@ let app: Target = .target(
     infoPlist: .extendingDefault(with: [
         "CFBundleDisplayName": "Keepworth",
         "UILaunchScreen": [:],
+        // Read by `KeepworthAppCore` instead of being hardcoded there: the identifier already
+        // has to match the entitlements file, and a third copy is a third place to drift.
+        "KeepworthAppGroup": .string(appGroup),
         "NSFaceIDUsageDescription":
             "Keepworth usa Face ID para que solo tú puedas ver tus finanzas.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -128,8 +169,6 @@ let app: Target = .target(
 // com.apple.widgetkit-extension) arrives in phase 7. It will depend on Domain,
 // Persistence and DesignSystem: the single exception to the rule that only AppCore
 // touches the data layer, because it reads the database shared through the App Group.
-//
-// Feature targets are added in phase 4, once they exist.
 
 // Synthesized asset accessors are off because Tuist's accessor imports UIKit into the target
 // that owns the catalog, and `KeepworthDesignSystem` may import SwiftUI and nothing else. The
@@ -140,5 +179,5 @@ let project = Project(
     name: "Keepworth",
     organizationName: "Keepworth",
     options: .options(disableSynthesizedResourceAccessors: true),
-    targets: coreModules + appCore + [app]
+    targets: coreModules + features + appCore + [app]
 )

@@ -44,6 +44,44 @@ public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConverti
         (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
     }
 
+    /// Day one of this month.
+    public var startOfMonth: CalendarDate {
+        CalendarDate(validatedYear: year, month: month, day: 1)
+    }
+
+    /// The last day of this month, however many it has.
+    public var endOfMonth: CalendarDate {
+        CalendarDate(
+            validatedYear: year,
+            month: month,
+            day: Self.daysInMonth(month, ofYear: year)
+        )
+    }
+
+    /// The same day one month over, clamped to the length of the month it lands in: 31 January
+    /// going forward is 28 February, not 3 March.
+    ///
+    /// `nil` only at the two ends of the supported range, which no ledger reaches.
+    public func addingMonths(_ count: Int) -> CalendarDate? {
+        let zeroBased = (year * 12 + month - 1) + count
+        let targetYear = zeroBased / 12
+        let targetMonth = zeroBased % 12 + 1
+        guard (1...9999).contains(targetYear) else { return nil }
+        return CalendarDate(
+            validatedYear: targetYear,
+            month: targetMonth,
+            day: min(day, Self.daysInMonth(targetMonth, ofYear: targetYear))
+        )
+    }
+
+    /// For the derivations above, where the year, month and day are already known to be valid
+    /// and a `try` would only add noise a caller cannot act on.
+    init(validatedYear year: Int, month: Int, day: Int) {
+        self.year = year
+        self.month = month
+        self.day = day
+    }
+
     static func daysInMonth(_ month: Int, ofYear year: Int) -> Int {
         switch month {
         case 1, 3, 5, 7, 8, 10, 12: 31

@@ -20,14 +20,16 @@ Estas reglas no se negocian por conveniencia. Si una tarea parece exigir romper 
 | `KeepworthPersistence` | `Domain` + GRDB |
 | `KeepworthSync` | `Domain` + `Persistence` + CloudKit |
 | `KeepworthDesignSystem` | SwiftUI únicamente |
-| `Feature*` | `Domain` + `DesignSystem` |
+| `Feature*` | `Domain` + `DesignSystem` (+ `FeatureSupport`) |
 | `KeepworthAppCore` | todos |
 
 **Ninguna feature importa `KeepworthPersistence`, `KeepworthSync`, `GRDB` ni `CloudKit`.** Las features dependen de protocolos declarados en `Domain`; `KeepworthAppCore` es el único lugar donde se instancian implementaciones concretas.
 
+`FeatureSupport` está en la capa de features y tiene sus mismos derechos: guarda lo que dos pantallas dibujan igual, y no puede importar nada que una feature no pueda.
+
 Un `import GRDB` dentro de `Modules/Features/` es un error de arquitectura, no un atajo. Si una feature necesita algo que no está en los protocolos de `Domain`, **se amplía el protocolo**.
 
-Excepciones, y solo estas dos: `Apps/KeepworthWidgets` depende de `Persistence` porque lee la base de datos del App Group, y `KeepworthDesignSystemTests` importa UIKit porque es la única API que admite no haber encontrado un color del catálogo. La tabla limita lo que importa cada **módulo**, no sus tests.
+Excepciones, y solo estas tres: `Apps/KeepworthWidgets` depende de `Persistence` porque lee la base de datos del App Group; `KeepworthDesignSystemTests` importa UIKit porque es la única API que admite no haber encontrado un color del catálogo; y los targets de test de las features **repiten** los dobles en memoria de `Domain`, porque un target de test no exporta nada y la alternativa sería enviar dobles dentro de un módulo de producción. La tabla limita lo que importa cada **módulo**, no sus tests.
 
 **Un archivo bajo `Modules/` sin target declarado en `Project.swift` esquiva toda la validación**: no lo ve `tuist generate`, ni el build, ni el CI. El target y el primer `.swift` del módulo van en el mismo commit.
 
@@ -149,7 +151,7 @@ xcodebuild test \
 xcrun swift-format lint --configuration .swift-format --recursive --strict Modules Apps
 ```
 
-**El esquema es `Keepworth-Workspace`, no `Keepworth`.** Tuist autogenera un esquema por target: el de `Keepworth` es el de la app y su acción de test está vacía, así que ejecuta cero tests sin avisar de ello. `Keepworth-Workspace` es el único que agrupa los cinco targets de test.
+**El esquema es `Keepworth-Workspace`, no `Keepworth`.** Tuist autogenera un esquema por target: el de `Keepworth` es el de la app y su acción de test está vacía, así que ejecuta cero tests sin avisar de ello. `Keepworth-Workspace` es el único que agrupa los ocho targets de test.
 
 El `.xcodeproj` y el `.xcworkspace` son artefactos generados: no se editan a mano ni se versionan. Para añadir un módulo o cambiar dependencias se edita `Project.swift`.
 
@@ -180,13 +182,13 @@ Los recuentos de tests se dicen en **casos ejecutados y por módulo**, nunca en 
 ```
 Apps/Keepworth/            app target
 Modules/Core/              Domain, Persistence, Sync, DesignSystem
+Modules/Features/          una carpeta por pantalla, más FeatureSupport
 Modules/KeepworthAppCore/  composition root: DI y navegación raíz
 ```
 
-Aún no existen, y sus targets se declararán en `Project.swift` cuando toque:
+Aún no existe, y su target se declarará en `Project.swift` cuando toque:
 
 ```
-Modules/Features/          una carpeta por feature (Fase 4)
 Apps/KeepworthWidgets/     widget extension (Fase 7)
 ```
 
