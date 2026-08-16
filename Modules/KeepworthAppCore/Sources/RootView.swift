@@ -1,3 +1,4 @@
+import FeatureSummary
 import KeepworthDesignSystem
 import SwiftUI
 
@@ -80,9 +81,24 @@ private struct LedgerTabs: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // The screens land here in the next two PRs; the shape of the bar is what this
-            // one is for.
-            Spacer()
+            switch selection {
+            case .summary:
+                NavigationStack {
+                    SummaryView(
+                        model: SummaryModel(
+                            institutions: dependencies.institutions,
+                            accounts: dependencies.accounts,
+                            entries: dependencies.entries,
+                            settings: dependencies.settings,
+                            changes: dependencies.changes
+                        ),
+                        formatter: dependencies.formatter
+                    )
+                }
+            case .transactions:
+                // Lands in the next PR.
+                Spacer()
+            }
 
             LedgerTabBar(
                 selection: $selection,
