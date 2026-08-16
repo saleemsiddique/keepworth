@@ -8,21 +8,28 @@ import KeepworthDomain
 /// guessed wrong changes it in Settings, which is one tap they take once instead of a screen
 /// everyone sees once.
 public enum FirstLaunch {
-    public static func prepareIfNeeded(_ dependencies: Dependencies) async throws {
+    /// The locale is a parameter and not read from inside, so a test can say which one it
+    /// means. Reading `Locale.current` in here made the seed depend on the machine running
+    /// it: green on a Spanish Mac, red on an American CI runner, and the failure said
+    /// `currencyMismatch` rather than "this test is not repeatable".
+    public static func prepareIfNeeded(
+        _ dependencies: Dependencies,
+        locale: Locale = .current
+    ) async throws {
         guard try await dependencies.settings.baseCurrency() == nil else { return }
 
         try await SeedFirstLaunch(
             accounts: dependencies.accounts,
             settings: dependencies.settings
         )
-        .execute(names: seedNames(), baseCurrency: currencyOfThisDevice())
+        .execute(names: seedNames(), baseCurrency: currency(of: locale))
     }
 
     /// Falls back to the euro rather than throwing: a device with no currency in its locale is
     /// still a device someone wants to track money on, and the choice is changeable.
-    static func currencyOfThisDevice() -> CurrencyCode {
+    static func currency(of locale: Locale) -> CurrencyCode {
         guard
-            let identifier = Locale.current.currency?.identifier,
+            let identifier = locale.currency?.identifier,
             let currency = try? CurrencyCode(identifier.uppercased())
         else {
             return .eur

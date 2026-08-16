@@ -22,7 +22,8 @@ func summaryLoadsOverRealRepositories() async throws {
         settings: SQLiteSettingsRepository(database: database),
         changes: SQLiteLedgerChanges(database: database)
     )
-    try await FirstLaunch.prepareIfNeeded(dependencies)
+    // A fixed locale, or the seed takes its currency from whatever machine runs the test.
+    try await FirstLaunch.prepareIfNeeded(dependencies, locale: Locale(identifier: "es_ES"))
 
     let bank = try Institution(name: "BBVA")
     try await dependencies.institutions.save(bank)
