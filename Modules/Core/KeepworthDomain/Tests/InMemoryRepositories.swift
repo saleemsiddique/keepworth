@@ -134,6 +134,7 @@ actor InMemoryEntryRepository: EntryRepository {
     /// production, and a feature test would prove a first row the user never sees.
     private var savedOrder: [EntryID: Int] = [:]
     private var nextSavedOrder = 0
+    private var wasDeleted: Set<EntryID> = []
     private let changes: InMemoryLedgerChanges?
 
     init(_ entries: [Entry] = [], changes: InMemoryLedgerChanges? = nil) {
@@ -159,6 +160,25 @@ actor InMemoryEntryRepository: EntryRepository {
             savedOrder[entry.id] = nextSavedOrder
             nextSavedOrder += 1
         }
+        changes?.notify()
+    }
+
+    func delete(_ id: EntryID) async throws {
+        guard let index = savedEntries.firstIndex(where: { $0.id == id }) else {
+            throw RepositoryError.entryNotFound(id)
+        }
+        savedEntries.remove(at: index)
+        wasDeleted.insert(id)
+        changes?.notify()
+    }
+
+    /// Takes the entry, like the SQLite one, and puts back exactly what it names. Keeping the
+    /// buried copy here instead would let this double undo something the real one could not.
+    func restore(_ entry: Entry) async throws {
+        guard wasDeleted.remove(entry.id) != nil else {
+            throw RepositoryError.entryNotFound(entry.id)
+        }
+        savedEntries.append(entry)
         changes?.notify()
     }
 

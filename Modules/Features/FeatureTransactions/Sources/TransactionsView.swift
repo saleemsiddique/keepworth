@@ -7,15 +7,18 @@ import SwiftUI
 /// Every movement, newest first, under the day it happened.
 public struct TransactionsView: View {
     @State private var model: TransactionsModel
+    @State private var deletion: MovementDeletion
     private let formatter: MoneyFormatter
     private let dayFormat: Date.FormatStyle
 
     public init(
         model: TransactionsModel,
+        deletion: MovementDeletion,
         formatter: MoneyFormatter,
         locale: Locale = .autoupdatingCurrent
     ) {
         self._model = State(initialValue: model)
+        self._deletion = State(initialValue: deletion)
         self.formatter = formatter
         self.dayFormat = CalendarDate.longDayStyle(in: locale)
     }
@@ -34,38 +37,67 @@ public struct TransactionsView: View {
             case .failed:
                 failed
             }
+
+            if let undoable = deletion.undoable {
+                VStack {
+                    Spacer()
+                    UndoBanner(
+                        message: String(localized: "transactions.deleted", bundle: .module),
+                        undoTitle: String(localized: "transactions.undo", bundle: .module)
+                    ) {
+                        Task { await deletion.undo() }
+                    }
+                }
+                .id(undoable.id)
+            }
         }
+        .animation(.default, value: deletion.undoable?.id)
         .task { await model.observe() }
     }
 
+    /// A `List` and not a `ScrollView`, unlike every other screen. Two reasons, and neither is
+    /// taste: swipe to delete is a `List` affordance, and this is the one screen whose length
+    /// grows without bound, where building every row up front stops being free.
+    ///
+    /// Its chrome is turned off row by row so it looks like the rest of the app: no separators
+    /// of its own, no inset, and the page colour behind each row.
     private func ready(_ days: [DayOfMovements]) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.betweenSections) {
-                if days.isEmpty {
-                    EmptyStateLine(String(localized: "transactions.empty", bundle: .module))
-                }
+        List {
+            if days.isEmpty {
+                EmptyStateLine(String(localized: "transactions.empty", bundle: .module))
+                    .plainRow()
+            }
 
-                ForEach(days) { day in
-                    VStack(alignment: .leading, spacing: 0) {
-                        SectionCaption(caption(for: day.day))
-
-                        ForEach(day.movements) { movement in
-                            MovementRow(
-                                entry: movement,
-                                accountNames: model.accountNames,
-                                moneyAccountIDs: model.moneyAccountIDs,
-                                formatter: formatter
-                            )
-                            if movement.id != day.movements.last?.id {
-                                Hairline()
+            ForEach(days) { day in
+                Section {
+                    ForEach(day.movements) { movement in
+                        MovementRow(
+                            entry: movement,
+                            accountNames: model.accountNames,
+                            moneyAccountIDs: model.moneyAccountIDs,
+                            formatter: formatter
+                        )
+                        .plainRow()
+                        .swipeActions(edge: .trailing) {
+                            Button(
+                                String(localized: "transactions.delete", bundle: .module),
+                                role: .destructive
+                            ) {
+                                Task { await deletion.delete(movement) }
                             }
                         }
+                        if movement.id != day.movements.last?.id {
+                            Hairline().plainRow()
+                        }
                     }
+                } header: {
+                    SectionCaption(caption(for: day.day)).plainRow()
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.screenMargin)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.defaultMinListRowHeight, 0)
     }
 
     private var failed: some View {

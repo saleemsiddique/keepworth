@@ -6,11 +6,13 @@ import SwiftUI
 /// Net worth, the accounts behind it, what the month did, and the last few movements.
 public struct SummaryView: View {
     @State private var model: SummaryModel
+    @State private var deletion: MovementDeletion
     private let formatter: MoneyFormatter
     @State private var showsReport = false
 
-    public init(model: SummaryModel, formatter: MoneyFormatter) {
+    public init(model: SummaryModel, deletion: MovementDeletion, formatter: MoneyFormatter) {
         self._model = State(initialValue: model)
+        self._deletion = State(initialValue: deletion)
         self.formatter = formatter
     }
 
@@ -29,7 +31,21 @@ public struct SummaryView: View {
             case .failed:
                 failed
             }
+
+            if let undoable = deletion.undoable {
+                VStack {
+                    Spacer()
+                    UndoBanner(
+                        message: String(localized: "summary.deleted", bundle: .module),
+                        undoTitle: String(localized: "summary.undo", bundle: .module)
+                    ) {
+                        Task { await deletion.undo() }
+                    }
+                }
+                .id(undoable.id)
+            }
         }
+        .animation(.default, value: deletion.undoable?.id)
         .task { await model.observe() }
     }
 
@@ -132,12 +148,23 @@ public struct SummaryView: View {
             }
 
             ForEach(snapshot.recent) { entry in
+                // Long press and not swipe, which `ESTADO.md` §7 allows just as much: this
+                // block is five rows inside a scroll of other things, and swipe belongs to a
+                // `List`, which cannot nest here. The full list has the swipe.
                 MovementRow(
                     entry: entry,
                     accountNames: snapshot.accountNames,
                     moneyAccountIDs: snapshot.moneyAccountIDs,
                     formatter: formatter
                 )
+                .contextMenu {
+                    Button(
+                        String(localized: "summary.delete", bundle: .module),
+                        role: .destructive
+                    ) {
+                        Task { await deletion.delete(entry) }
+                    }
+                }
                 if entry.id != snapshot.recent.last?.id {
                     Hairline()
                 }

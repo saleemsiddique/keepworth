@@ -40,6 +40,23 @@ public protocol EntryRepository: Sendable {
     /// Every entry comes back with **all** its lines. There is no partial `Entry`: one would
     /// not balance, and `Entry.init` would reject it.
     func entries(matching query: EntryQuery) async throws -> [Entry]
+    /// Buries a movement: the entry and every one of its lines get a tombstone.
+    ///
+    /// Not a `DELETE`. A row that vanishes leaves nothing for the next sync to notice, so it
+    /// comes back from another device as if it had never been removed.
+    ///
+    /// **Both the entry and its lines**, not just the entry. Reads already ignore a line whose
+    /// entry is buried, so entry-only would look right on screen — but a line with no tombstone
+    /// of its own is a line the sync has no reason to remove anywhere else.
+    func delete(_ id: EntryID) async throws
+    /// Brings back a movement that was just buried, which is what the undo after a swipe does.
+    ///
+    /// Takes the whole `Entry` and not its id: the caller is holding the one it removed, and
+    /// that says exactly which lines to revive. Deriving them from the tombstone instant
+    /// looked tidier and was wrong — an entry edited and then deleted can carry two burials
+    /// stamped at the same moment, and undo brought back a four-legged movement that could
+    /// not balance.
+    func restore(_ entry: Entry) async throws
 }
 
 /// One query type instead of a method per combination: net worth asks for some accounts up
@@ -110,4 +127,5 @@ public enum EntryQueryError: Error, Equatable {
 public enum RepositoryError: Error, Equatable {
     case accountNotFound(AccountID)
     case institutionNotFound(InstitutionID)
+    case entryNotFound(EntryID)
 }

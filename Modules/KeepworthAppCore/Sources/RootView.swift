@@ -1,4 +1,5 @@
 import FeatureSummary
+import FeatureSupport
 import FeatureTransactions
 import KeepworthDesignSystem
 import SwiftUI
@@ -93,6 +94,7 @@ private struct LedgerTabs: View {
                             settings: dependencies.settings,
                             changes: dependencies.changes
                         ),
+                        deletion: MovementDeletion(entries: dependencies.entries),
                         formatter: dependencies.formatter
                     )
                 }
@@ -104,6 +106,7 @@ private struct LedgerTabs: View {
                             entries: dependencies.entries,
                             changes: dependencies.changes
                         ),
+                        deletion: MovementDeletion(entries: dependencies.entries),
                         formatter: dependencies.formatter
                     )
                 }
