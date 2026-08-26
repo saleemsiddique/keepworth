@@ -708,7 +708,7 @@ Lint limpio.
 
 **Lo que la Fase 2 obligó a añadir al dominio**: `save` en los repositorios de cuentas y bancos, `archive` en el de cuentas, el protocolo `SettingsRepository` y el caso de uso `SeedFirstLaunch`.
 
-**Lo que queda fuera a propósito**: el borrado (con su regla de «sin movimientos se borra, con movimientos se archiva») llega en la Fase 4, junto con la pantalla que lo pide. Hoy **no existe ninguna operación de borrado**: `AccountRepository.archive` es lo único que hay, y el único `deleted_at` que se escribe es el que entierra las líneas que un asiento reguardado ya no tiene. `archive` en bancos y `ValueObservation` tampoco están.
+**Lo que quedó fuera a propósito**: el borrado y la observación. Al cerrar la Fase 2, `AccountRepository.archive` era la única escritura de ese lado y el único `deleted_at` que se escribía era el que entierra las líneas que un asiento reguardado ya no tiene. *Borrar un movimiento* llegó en la Fase 4 bis, y la observación en la Fase 4 — como una señal de «algo cambió» y no con `ValueObservation` por consulta. **Siguen sin existir** el borrado de cuentas y bancos, con su regla, y `archive` en bancos: van con Ajustes.
 
 ### Fase 3 — Design System — **construida (2026-08-15)**
 
@@ -762,7 +762,7 @@ Una regla vive en **un solo sitio autoritativo**; la skill no la repite, la enla
 
 ### Fase 4 — Resumen y Movimientos
 
-`FeatureSummary` y `FeatureTransactions` con SwiftUI y `@Observable`, más la pantalla de informe que se empuja desde Resumen. Barra inferior con ⊕ centrado y Ajustes en toolbar. Observación reactiva con `ValueObservation` de GRDB para que la UI se refresque sola. **Localización EN/ES desde la primera cadena**, sin textos incrustados.
+`FeatureSummary` y `FeatureTransactions` con SwiftUI y `@Observable`, más la pantalla de informe que se empuja desde Resumen. Barra inferior con ⊕ centrado y Ajustes en toolbar. Observación reactiva para que la UI se refresque sola — resuelta con una señal de «el libro se movió», no con `ValueObservation` por consulta; el porqué está más abajo. **Localización EN/ES desde la primera cadena**, sin textos incrustados.
 
 **La lectura de asientos ya está resuelta (2026-08-16).** Era un bloqueante que la auditoría destapó y que no figuraba como pendiente en ninguna parte: `EntryRepository` solo sabía escribir y devolver patas sueltas, así que salían el patrimonio y el informe —que agrupan por cuenta— pero no la lista de Movimientos ni el editor de la Fase 5.
 
@@ -856,7 +856,7 @@ Criterios de aceptación por fase:
 
 - **Entorno de IA** — editar un `.swift` deja el archivo formateado sin intervención; tocar `Project.swift` regenera el proyecto; el agente revisor detecta un `import GRDB` introducido a propósito dentro de una feature.
 - **Dominio** — un asiento cuyas líneas no suman cero es rechazado con error; un asiento de una sola línea es rechazado; sumar `Money` de divisas distintas falla en vez de aproximar; una cuenta de gasto o ingreso con banco es rechazada; el patrimonio neto es correcto mezclando activo y pasivo, y **no varía** al crear, renombrar o archivar una categoría; el `netWorthChange` del informe coincide al céntimo con la variación del patrimonio en el periodo, **también cuando dentro de él se declara el saldo inicial de una cuenta nueva**.
-- **Persistencia** — crear y editar cuentas y movimientos sobre base de datos en memoria; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone. El criterio de **borrado** —marca `deleted_at` y la fila desaparece de las consultas— se verifica en la Fase 4, que es donde se implementa.
+- **Persistencia** — crear y editar cuentas y movimientos sobre base de datos en memoria; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone. El criterio de **borrado** —marca `deleted_at` y la fila desaparece de las consultas— lo cumple la Fase 4 bis para los movimientos: se entierran el asiento y sus líneas, no se elimina ni una fila, y el undo devuelve el movimiento entero. Para cuentas y bancos sigue sin escribirse.
 - **Design System** — cada uno de los siete tokens está en el bundle y resuelve a sus dos valores documentados; `ComponentGallery` revisada en claro y oscuro; y `grep` de colores literales (`Color(red:`, `Color.gray`, `.foregroundColor`…) sin un solo resultado fuera de `Colors.swift`. Esa última es la comprobación mecánica de «cero colores literales fuera del design system», y conviene repetirla en cada fase de UI.
 - **UI** — galería de previews revisada en tema claro y oscuro; recorrido manual en simulador de crear cuenta → registrar gasto → verlo en Resumen y en Movimientos → editarlo → borrarlo, con el patrimonio actualizándose en cada paso.
 - **Import/Export** — exportar, borrar la base de datos, reimportar, y comprobar que el patrimonio y el número de movimientos coinciden exactamente.
