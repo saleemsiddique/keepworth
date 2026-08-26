@@ -4,9 +4,9 @@
 >
 > Las reglas de trabajo del día a día están en `CLAUDE.md` (raíz) y en el `CLAUDE.md` de cada módulo. Este documento explica el **porqué**; los `CLAUDE.md` imponen el **qué**.
 
-Última actualización: 2026-08-16 — **Fase 4 construida**: la app arranca, se siembra sola y enseña Resumen, Movimientos y el informe del periodo (sección 9). Antes, ese mismo día, la **Fase 3 (Design System) mergeada a `main`** (PR #5) y la **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
+Última actualización: 2026-08-16 — **Fase 4 bis: borrar un movimiento**, con deshacer. Antes, ese mismo día, la **Fase 4 construida**: la app arranca, se siembra sola y enseña Resumen, Movimientos y el informe del periodo (sección 9). Antes, ese mismo día, la **Fase 3 (Design System) mergeada a `main`** (PR #5) y la **Fase 3.5 hecha a medias a propósito**: tres skills escritas, dos aplazadas por falta de instancias reales (sección 9). Antes, la **Fase 3 (Design System) construida**: tokens en asset catalog, tipografía, espaciado, los siete componentes y las dos galerías de previews. Antes, la **Fase 2 (Persistencia)**, mergeada el 2026-08-13 (PR #4); la **Fase 1 (Dominio)**, el 2026-08-08 (PR #2), ver sección 6 bis; y el 2026-08-04, **Fase 0 verificada en el Mac y mergeada a `main`** (PR #1): proyecto generado, build y tests en verde, CI en verde, bundle ID definitivo fijado, hooks y agente revisor comprobados. La sección 3 explica además qué se puede y qué no se puede hacer desde Windows.
 
-**Siguiente paso: Fase 4 bis (borrado y archivado)**, o la Fase 5 (editor de movimiento).
+**Siguiente paso: Fase 5 (editor de movimiento)**, que es la que despierta el botón ⊕.
 
 ### Cómo se cuentan los tests en este documento
 
@@ -16,7 +16,7 @@ Se han corregido cifras que se venían arrastrando mal desde la Fase 1. La conve
 - Se dice **de qué módulo**. El total del repositorio incluye los placeholders de Sync y AppCore, que no son de ninguna fase.
 - **La cifra vive solo aquí.** Repetirla en cada sección de fase es lo que la hizo derivar tres veces: las fases dicen «tests en verde» y quien quiera el número lo busca en esta línea.
 
-Medido el 2026-08-16, con la Fase 4 terminada: **193 casos ejecutados** — Domain 113, Persistence 40, FeatureSummary 14, DesignSystem 7, AppCore 6, FeatureSupport 6, FeatureTransactions 6, y 1 placeholder en Sync.
+Medido el 2026-08-16, con la Fase 4 bis terminada: **208 casos ejecutados** — Domain 113, Persistence 48, FeatureSummary 14, FeatureSupport 13, DesignSystem 7, AppCore 6, FeatureTransactions 6, y 1 placeholder en Sync.
 
 ---
 
@@ -54,7 +54,7 @@ La **Fase 3 (Design System)** está construida: build limpio, tests en verde y l
 
 Entre medias, el PR #3 reescribió los comentarios del código en inglés y los redujo. Esa convención ya es regla dura: **todo lo que va dentro de un archivo de código está en inglés** —comentarios, identificadores y nombres de test, en Swift y también en `Project.swift`, el CI, los entitlements y los hooks—, y el español se queda en la documentación y en la conversación. Está en `CLAUDE.md` § «Idioma del código», con sus dos excepciones.
 
-**La Fase 4 (Resumen y Movimientos) está construida.** Falta la 4 bis: borrado y archivado.
+**La Fase 4 y la 4 bis están construidas.** La app abre el libro, lo siembra, enseña Resumen, Movimientos y el informe, y deja borrar un movimiento con deshacer.
 
 ```
 CLAUDE.md                                    reglas duras del proyecto
@@ -432,10 +432,15 @@ El saldo inicial de una cuenta tampoco contamina el informe: su contrapartida es
 
 ### Reglas de borrado
 
+- **Un movimiento** se borra entero: se entierran el asiento y todas sus líneas, y hay unos segundos para deshacerlo. **Implementado** en la Fase 4 bis.
 - **Categoría o cuenta sin movimientos**: se borra.
 - **Categoría o cuenta con movimientos**: solo se **archiva**. Desaparece del editor pero sigue en el histórico. Borrarla dejaría movimientos huérfanos.
 - **Banco con cuentas vivas**: no se borra. Primero se archivan o se mueven sus cuentas.
 - La cuenta `is_system` («Saldo inicial») no se borra ni se renombra: es lo que hace que los números cuadren.
+
+**Las cuatro reglas de cuentas y bancos siguen sin escribir en código**: se alcanzan desde Ajustes, que no existe. `AccountRepository.archive` es lo único que hay de ese lado.
+
+Archivar una cuenta la saca del **editor**, no del libro: su dinero sigue siendo del usuario, así que Resumen la sigue enseñando y el patrimonio la sigue contando. Esconder la fila mientras el total del banco la incluye dejaría una cifra en pantalla que no suma las filas de debajo.
 
 ### Semilla del primer arranque
 
@@ -703,7 +708,7 @@ Lint limpio.
 
 **Lo que la Fase 2 obligó a añadir al dominio**: `save` en los repositorios de cuentas y bancos, `archive` en el de cuentas, el protocolo `SettingsRepository` y el caso de uso `SeedFirstLaunch`.
 
-**Lo que queda fuera a propósito**: el borrado (con su regla de «sin movimientos se borra, con movimientos se archiva») llega en la Fase 4, junto con la pantalla que lo pide. Hoy **no existe ninguna operación de borrado**: `AccountRepository.archive` es lo único que hay, y el único `deleted_at` que se escribe es el que entierra las líneas que un asiento reguardado ya no tiene. `archive` en bancos y `ValueObservation` tampoco están.
+**Lo que quedó fuera a propósito**: el borrado y la observación. Al cerrar la Fase 2, `AccountRepository.archive` era la única escritura de ese lado y el único `deleted_at` que se escribía era el que entierra las líneas que un asiento reguardado ya no tiene. *Borrar un movimiento* llegó en la Fase 4 bis, y la observación en la Fase 4 — como una señal de «algo cambió» y no con `ValueObservation` por consulta. **Siguen sin existir** el borrado de cuentas y bancos, con su regla, y `archive` en bancos: van con Ajustes.
 
 ### Fase 3 — Design System — **construida (2026-08-15)**
 
@@ -757,7 +762,7 @@ Una regla vive en **un solo sitio autoritativo**; la skill no la repite, la enla
 
 ### Fase 4 — Resumen y Movimientos
 
-`FeatureSummary` y `FeatureTransactions` con SwiftUI y `@Observable`, más la pantalla de informe que se empuja desde Resumen. Barra inferior con ⊕ centrado y Ajustes en toolbar. Observación reactiva con `ValueObservation` de GRDB para que la UI se refresque sola. **Localización EN/ES desde la primera cadena**, sin textos incrustados.
+`FeatureSummary` y `FeatureTransactions` con SwiftUI y `@Observable`, más la pantalla de informe que se empuja desde Resumen. Barra inferior con ⊕ centrado y Ajustes en toolbar. Observación reactiva para que la UI se refresque sola — resuelta con una señal de «el libro se movió», no con `ValueObservation` por consulta; el porqué está más abajo. **Localización EN/ES desde la primera cadena**, sin textos incrustados.
 
 **La lectura de asientos ya está resuelta (2026-08-16).** Era un bloqueante que la auditoría destapó y que no figuraba como pendiente en ninguna parte: `EntryRepository` solo sabía escribir y devolver patas sueltas, así que salían el patrimonio y el informe —que agrupan por cuenta— pero no la lista de Movimientos ni el editor de la Fase 5.
 
@@ -787,7 +792,20 @@ Decisiones que conviene no reabrir:
 
 Dos fallos que solo el simulador encontró, y que ningún test de modelo habría cazado: un modificador sobre un `Group` que envuelve un `switch` se aplica a cada rama, así que el `.task` se cancelaba en el primer cambio de estado y la pantalla salía en blanco; y el mapa de nombres de cuenta no incluía las categorías, así que un movimiento nombraba su cuenta dos veces.
 
-**Lo que queda para la Fase 4 bis**: el **borrado** con su regla —sin movimientos se borra, con movimientos se archiva—, `archive` en bancos, y el botón ⊕, que sigue inerte hasta que la Fase 5 traiga el editor.
+**Lo que quedó para la Fase 4 bis**: el borrado. Y el botón ⊕, que sigue inerte hasta que la Fase 5 traiga el editor.
+
+### Fase 4 bis — Borrar un movimiento — **construida (2026-08-16)**
+
+Alcance deliberadamente estrecho: **solo movimientos**. Borrar una cuenta o un banco se alcanza desde Ajustes, que no existe y no tiene fase asignada, así que escribir esa regla ahora sería código que nadie puede invocar — lo mismo que llevó a aplazar dos skills en la Fase 3.5.
+
+- **`DeleteMovement`** en `Domain`, fino a propósito: un asiento se borra entero o no se borra, así que aquí no hay regla contable que aplicar. Existe para que las pantallas pasen por un caso de uso como en todo lo demás.
+- **Borrar entierra el asiento y sus líneas.** Solo el asiento se vería bien en pantalla —las lecturas ya ignoran una línea cuyo asiento está enterrado— pero una línea sin lápida propia es una línea que el sync no tiene motivo para quitar en ningún otro sitio.
+- **El undo recibe el `Entry`, no su id.** Deducir las líneas del instante del entierro parecía más limpio y estaba mal: un asiento editado y luego borrado arrastra dos entierros que pueden compartir marca de tiempo, y el undo devolvía un movimiento de cuatro patas. Lo cazó el test antes que nadie.
+- **Deshacer y no confirmar.** El swipe borra al momento y ofrece deshacer unos segundos; debajo ya es soft delete, así que restaurar es limpiar el `deleted_at`. Un diálogo en cada borrado estorba a quien sabe lo que hace; sin red, un deslizamiento accidental descuadra las cifras y el usuario no sabrá qué le falta.
+- **Movimientos pasa a `List`**, la única pantalla que lo usa: el swipe es una afordancia de `List`, y es la única lista que crece sin límite. Su cromo se apaga fila a fila con `plainRow()` para que se vea como el resto.
+- **En Resumen, long-press** en vez de swipe — que la sección 7 admite igual. Ese bloque son cinco filas dentro de un scroll de otras cosas, y un `List` no anida ahí.
+
+**Sigue pendiente**: borrar y archivar cuentas y bancos, con su regla, y `archive` en bancos. Van con Ajustes.
 
 ### Fase 5 — Editor de movimiento
 
@@ -838,7 +856,7 @@ Criterios de aceptación por fase:
 
 - **Entorno de IA** — editar un `.swift` deja el archivo formateado sin intervención; tocar `Project.swift` regenera el proyecto; el agente revisor detecta un `import GRDB` introducido a propósito dentro de una feature.
 - **Dominio** — un asiento cuyas líneas no suman cero es rechazado con error; un asiento de una sola línea es rechazado; sumar `Money` de divisas distintas falla en vez de aproximar; una cuenta de gasto o ingreso con banco es rechazada; el patrimonio neto es correcto mezclando activo y pasivo, y **no varía** al crear, renombrar o archivar una categoría; el `netWorthChange` del informe coincide al céntimo con la variación del patrimonio en el periodo, **también cuando dentro de él se declara el saldo inicial de una cuenta nueva**.
-- **Persistencia** — crear y editar cuentas y movimientos sobre base de datos en memoria; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone. El criterio de **borrado** —marca `deleted_at` y la fila desaparece de las consultas— se verifica en la Fase 4, que es donde se implementa.
+- **Persistencia** — crear y editar cuentas y movimientos sobre base de datos en memoria; las migraciones aplican en orden sobre una base vacía y sobre una con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone. El criterio de **borrado** —marca `deleted_at` y la fila desaparece de las consultas— lo cumple la Fase 4 bis para los movimientos: se entierran el asiento y sus líneas, no se elimina ni una fila, y el undo devuelve el movimiento entero. Para cuentas y bancos sigue sin escribirse.
 - **Design System** — cada uno de los siete tokens está en el bundle y resuelve a sus dos valores documentados; `ComponentGallery` revisada en claro y oscuro; y `grep` de colores literales (`Color(red:`, `Color.gray`, `.foregroundColor`…) sin un solo resultado fuera de `Colors.swift`. Esa última es la comprobación mecánica de «cero colores literales fuera del design system», y conviene repetirla en cada fase de UI.
 - **UI** — galería de previews revisada en tema claro y oscuro; recorrido manual en simulador de crear cuenta → registrar gasto → verlo en Resumen y en Movimientos → editarlo → borrarlo, con el patrimonio actualizándose en cada paso.
 - **Import/Export** — exportar, borrar la base de datos, reimportar, y comprobar que el patrimonio y el número de movimientos coinciden exactamente.

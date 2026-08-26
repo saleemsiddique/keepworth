@@ -65,6 +65,7 @@ Los bancos sí son entidad propia (`Institution`): agrupan cuentas y dan un tota
 - Los identificadores son UUID. **Nunca autoincrementales**: romperían el sync con CloudKit.
 - Toda tabla lleva `created_at`, `updated_at` y `deleted_at`.
 - **Nada se borra físicamente.** Borrar es marcar `deleted_at`; las consultas filtran filas vivas.
+- **Borrar un asiento entierra el asiento y todas sus líneas.** Solo el asiento se vería bien en pantalla, porque las lecturas ya ignoran una línea cuyo asiento está enterrado — pero una línea sin lápida propia es una línea que el sync no tiene motivo para quitar en ningún otro sitio, y vuelve.
 - Una línea solo cuenta si **ni ella ni su asiento** están borrados. Las consultas van contra la vista `live_entry_line`, nunca contra `entry_line` directamente: filtrar solo por la línea es el error silencioso más probable del esquema.
 - Cada cambio de esquema es una migración nueva y versionada. Nunca se edita una migración ya publicada.
 
@@ -175,6 +176,14 @@ Los diagnósticos de SourceKit en el editor se quedan atrás hasta esa regenerac
 
 `Tuist/Package.resolved` cambia su `originHash` al regenerar sin que se mueva ningún pin. Es ruido: fuera del commit salvo que cambie una versión de verdad.
 
+**Si los tests fallan sin ejecutar ni uno**, con «Failed to load the test bundle … Trying to load an unsigned library» en **todos** los targets a la vez, no es el código: es la DerivedData. Pasa al mezclar un `-derivedDataPath` propio —por ejemplo para instalar la app en el simulador— con la ruta compartida. Se arregla borrándola:
+
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/Keepworth-*
+```
+
+Que fallen **todos** los bundles, incluido alguno que no se ha tocado, es la señal de que el problema es del entorno y no de un test.
+
 ### Antes de dar una fase por terminada
 
 Además de build, tests y lint, dos comprobaciones que ninguna herramienta hace sola:
@@ -206,7 +215,9 @@ Aún no existe, y su target se declarará en `Project.swift` cuando toque:
 Apps/KeepworthWidgets/     widget extension (Fase 7)
 ```
 
-Cada módulo tiene `Sources/` y `Tests/`. `KeepworthDesignSystem` lleva además `Resources/` con el catálogo de tokens, y es el único: los recursos se declaran con `resourceGlobs:` en `Project.swift`, que por defecto está vacío porque un glob que no casa con nada hace fallar la generación.
+Cada módulo tiene `Sources/` y `Tests/`. Los que llevan además `Resources/` lo declaran con `resourceGlobs:` en `Project.swift`, que por defecto está vacío porque un glob que no casa con nada hace fallar la generación: `KeepworthDesignSystem` para el catálogo de tokens, y `KeepworthAppCore`, `FeatureSummary` y `FeatureTransactions` para sus String Catalogs.
+
+**Todo texto se busca con `bundle: .module`.** Dentro de un framework, `String(localized:)` y `Text(_:)` miran en el bundle principal, así que sin él las cadenas se pintan como su propia clave **sin dar ningún error**.
 
 Los módulos Core llevan su propio `CLAUDE.md` con el contrato de la capa: léelo antes de tocarlos.
 

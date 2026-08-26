@@ -15,7 +15,7 @@ Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta cap
 - `LedgerChanges`, que avisa de que el libro se movió sin decir qué. Es lo que permite que una pantalla se refresque sola sin que cada camino de escritura tenga que acordarse de a quién avisar.
 - `MoneyFormatter`, la única forma de convertir `Money` en texto.
 - Dos formas de preguntar por movimientos, y no son intercambiables: `EntryLineQuery` pregunta **cuánto suman** unas cuentas y responde con patas sueltas; `EntryQuery` pregunta **qué pasó** y responde con asientos enteros.
-- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
+- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `DeleteMovement`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
 - Errores de dominio descriptivos, nunca `nil` para señalar fallo.
 
 **`Decimal` solo aparece en `MoneyFormatter`, y solo en el último paso hacia el texto.** La aritmética sigue siendo `Int64`, que es lo que permite que un asiento sume exactamente cero. Formatear es el único sitio donde una representación decimal no solo es segura sino obligatoria, porque `NumberFormatter` habla decimales. Un `Decimal` en cualquier otro archivo del dominio es un bug.
@@ -27,6 +27,10 @@ Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta cap
 **No existe un `Entry` parcial.** `Entry.init` valida que las líneas sumen cero, así que leer un asiento es leerlo entero. De ahí sale la regla menos obvia de `EntryQuery`: filtrar por cuenta elige **qué asientos**, nunca qué líneas. Un gasto tiene una pata en la cuenta y otra en la categoría, y devolver solo la que casa con el filtro produce un asiento que no cuadra y que el init rechaza.
 
 `EntryQuery.limit` es **obligatorio**, por lo mismo que `EntryLineQuery.accountIDs` no admite «todas»: una consulta sin techo sobre un historial largo es la que no queremos que nadie escriba por descuido. Un límite de cero o negativo lanza, y no por purismo — SQLite interpreta un `LIMIT` negativo como «sin límite», así que dejarlo pasar convertiría la defensa en su contrario.
+
+**Borrar un movimiento no tiene regla; borrar una cuenta sí.** Un asiento se borra entero o no se borra: `DeleteMovement` es fino a propósito y existe para que las pantallas pasen por un caso de uso como en todo lo demás. La regla «sin movimientos se borra, con movimientos se archiva» es de las cuentas, y llega con la pantalla que la pide.
+
+**El undo recibe el `Entry`, no su id.** Quien borró lo tiene en la mano, y eso dice exactamente qué líneas revivir. Deducirlas del instante del entierro parecía más limpio y estaba mal: un asiento editado y luego borrado arrastra dos entierros que pueden compartir marca de tiempo, y el undo devolvía un movimiento de cuatro patas que no cuadra.
 
 `Entry.twoLine` es **interno a propósito**: construir un movimiento pasa siempre por un caso de uso, que es quien valida los tipos de cuenta. Si una pantalla necesita un movimiento que hoy no existe, se añade un caso de uso, no se abre el constructor.
 

@@ -20,7 +20,11 @@ Implementa los protocolos de repositorio de `KeepworthDomain` sobre SQLite con G
 2. Toda tabla lleva `created_at`, `updated_at` y `deleted_at`.
 3. **Soft delete siempre**: borrar es escribir `deleted_at`. Las consultas filtran `deleted_at IS NULL`. Un `DELETE FROM` en código de producción es un bug: sin tombstone, el registro reaparece en el siguiente sync.
 
-   Hoy **no existe ninguna operación de borrado en esta capa**. `AccountRepository.archive` es lo único que hay, y el único `deleted_at` que se escribe es el que entierra las líneas que un asiento reguardado ya no tiene. El borrado llega en la Fase 4, con la pantalla que lo pide y con su regla —sin movimientos se borra, con movimientos se archiva—. La regla de arriba es la que tendrá que cumplir cuando exista.
+   **Borrar un asiento entierra el asiento y sus líneas**, en una sola transacción. No solo el asiento: las lecturas ya ignoran una línea cuyo asiento está enterrado, así que hacerlo a medias se vería bien en pantalla — pero una línea sin lápida propia es una línea que el sync no tiene motivo para quitar en ningún otro sitio, y vuelve en la siguiente ida y vuelta.
+
+   `restore` recibe el `Entry` y revive **exactamente las líneas que ese asiento nombra**. Identificarlas por el instante del entierro falla cuando dos operaciones comparten marca de tiempo, que es lo que ocurre con un asiento editado y borrado después; hay test.
+
+   **Borrar cuentas y bancos todavía no existe**, con su regla de «sin movimientos se borra, con movimientos se archiva». Llega con Ajustes, que es de donde se alcanza.
 4. **Las líneas se consultan por la vista `live_entry_line`, nunca por `entry_line`.** Una línea solo cuenta si ni ella ni su asiento están borrados; filtrar solo por la línea deja vivas las líneas de asientos borrados y descuadra saldos e informes sin dar ningún síntoma.
 5. `PRAGMA foreign_keys = ON`. No es el valor por defecto de SQLite.
 6. Cada cambio de esquema es una **migración nueva y versionada**. Una migración ya publicada no se edita jamás, ni para corregir un typo.
@@ -68,6 +72,6 @@ Contra base de datos **en memoria**, nunca contra un fichero real.
 
 Casos que siempre deben existir: cada migración aplica sobre base vacía y sobre base con datos; los saldos derivados coinciden con la suma de líneas; reguardar un asiento con menos líneas entierra las sobrantes; un `save` no reescribe `created_at` ni limpia un tombstone.
 
-El test de que una fila con `deleted_at` desaparece de las consultas existe, pero hoy escribe el `UPDATE` a mano porque **no hay API de borrado que llamar**. Cuando la Fase 4 la traiga, ese test pasa a ejercitarla y se convierte en criterio permanente.
+El borrado de un movimiento sí tiene API y sus tests la ejercitan: sale de todas las listas, entierra las líneas además del asiento, no elimina ni una fila de la tabla, y el undo lo devuelve entero sin resucitar lo que una edición anterior ya había enterrado.
 
 El helper `StoredLedger` monta un libro sembrado sobre los cuatro repositorios reales. Se llama así frente al `Ledger` de `KeepworthDomain`, que ve lo mismo a través de dobles en memoria; ninguno de los dos toca un fichero.

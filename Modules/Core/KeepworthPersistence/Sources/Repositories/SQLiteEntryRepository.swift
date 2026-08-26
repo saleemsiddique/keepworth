@@ -57,6 +57,71 @@ public struct SQLiteEntryRepository: EntryRepository {
         }
     }
 
+    /// The entry and its live lines, buried in one transaction.
+    public func delete(_ id: EntryID) async throws {
+        let now = now()
+        let entryID = id.rawValue.uuidString
+
+        let buried = try await database.writer.write { db in
+            try db.execute(
+                sql: """
+                    UPDATE entry_line SET deleted_at = ?, updated_at = ?
+                    WHERE entry_id = ? AND deleted_at IS NULL
+                    """,
+                arguments: [now, now, entryID]
+            )
+            try db.execute(
+                sql: """
+                    UPDATE entry SET deleted_at = ?, updated_at = ?
+                    WHERE id = ? AND deleted_at IS NULL
+                    """,
+                arguments: [now, now, entryID]
+            )
+            return db.changesCount
+        }
+
+        guard buried > 0 else {
+            throw RepositoryError.entryNotFound(id)
+        }
+    }
+
+    /// Revives exactly the lines the given entry names, and nothing else.
+    ///
+    /// Named rather than matched on the tombstone instant: an entry that was edited and then
+    /// deleted carries two burials, and with a coarse enough clock they share a timestamp.
+    /// Reviving by instant then brought back four legs on a two-legged movement — an entry
+    /// that cannot sum to zero, which `Entry.init` rejects on the next read.
+    public func restore(_ entry: Entry) async throws {
+        let now = now()
+        let entryID = entry.id.rawValue.uuidString
+        let lineIDs = entry.lines.map(\.id.rawValue.uuidString)
+        let placeholders = lineIDs.map { _ in "?" }.joined(separator: ",")
+
+        let revived = try await database.writer.write { db in
+            var arguments: [any DatabaseValueConvertible] = [now, entryID]
+            arguments.append(contentsOf: lineIDs)
+            try db.execute(
+                sql: """
+                    UPDATE entry_line SET deleted_at = NULL, updated_at = ?
+                    WHERE entry_id = ? AND id IN (\(placeholders))
+                    """,
+                arguments: StatementArguments(arguments)
+            )
+            try db.execute(
+                sql: """
+                    UPDATE entry SET deleted_at = NULL, updated_at = ?
+                    WHERE id = ? AND deleted_at IS NOT NULL
+                    """,
+                arguments: [now, entryID]
+            )
+            return db.changesCount
+        }
+
+        guard revived > 0 else {
+            throw RepositoryError.entryNotFound(entry.id)
+        }
+    }
+
     public func lines(matching query: EntryLineQuery) async throws -> [EntryLine] {
         guard !query.accountIDs.isEmpty else { return [] }
 

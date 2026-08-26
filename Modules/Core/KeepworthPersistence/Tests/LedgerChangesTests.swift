@@ -8,7 +8,7 @@ import Testing
 /// The wait is generous where a signal is expected, because it is never actually paid: the
 /// answer arrives as soon as the observation fires. Where **no** signal is expected the wait
 /// is paid in full every run, so that one is kept short.
-private func receivedSignal(
+func receivedSignal(
     from stream: AsyncThrowingStream<Void, any Error>,
     waiting timeout: Duration = .seconds(5)
 ) async throws -> Bool {
