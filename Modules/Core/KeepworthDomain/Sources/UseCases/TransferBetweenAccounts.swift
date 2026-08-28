@@ -15,6 +15,8 @@ public struct TransferBetweenAccounts: Sendable {
     }
 
     public struct Request: Hashable, Sendable {
+        /// The movement being rewritten, or `nil` for a new one.
+        public let id: EntryID?
         public let sourceAccountID: AccountID
         public let destinationAccountID: AccountID
         /// How much is transferred, positive.
@@ -23,12 +25,14 @@ public struct TransferBetweenAccounts: Sendable {
         public let note: String?
 
         public init(
+            id: EntryID? = nil,
             sourceAccountID: AccountID,
             destinationAccountID: AccountID,
             amount: Money,
             occurredOn: CalendarDate,
             note: String? = nil
         ) {
+            self.id = id
             self.sourceAccountID = sourceAccountID
             self.destinationAccountID = destinationAccountID
             self.amount = amount
@@ -47,6 +51,7 @@ public struct TransferBetweenAccounts: Sendable {
         try validateMovement(of: request.amount, outOf: source, into: destination)
 
         let entry = try Entry.twoLine(
+            id: request.id ?? EntryID(),
             occurredOn: request.occurredOn,
             payee: nil,
             note: request.note,

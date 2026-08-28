@@ -67,14 +67,22 @@ public struct SQLiteAccountRepository: AccountRepository {
     }
 
     public func archive(_ id: AccountID) async throws {
+        try await setArchived(true, on: id)
+    }
+
+    public func unarchive(_ id: AccountID) async throws {
+        try await setArchived(false, on: id)
+    }
+
+    private func setArchived(_ isArchived: Bool, on id: AccountID) async throws {
         let now = now()
         let updated = try await database.writer.write { db in
             try db.execute(
                 sql: """
-                    UPDATE account SET is_archived = 1, updated_at = ?
+                    UPDATE account SET is_archived = ?, updated_at = ?
                     WHERE id = ? AND deleted_at IS NULL
                     """,
-                arguments: [now, id.rawValue.uuidString]
+                arguments: [isArchived, now, id.rawValue.uuidString]
             )
             return db.changesCount
         }

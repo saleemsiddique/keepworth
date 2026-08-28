@@ -24,7 +24,7 @@ Implementa los protocolos de repositorio de `KeepworthDomain` sobre SQLite con G
 
    `restore` recibe el `Entry` y revive **exactamente las líneas que ese asiento nombra**. Identificarlas por el instante del entierro falla cuando dos operaciones comparten marca de tiempo, que es lo que ocurre con un asiento editado y borrado después; hay test.
 
-   **Borrar cuentas y bancos todavía no existe**, con su regla de «sin movimientos se borra, con movimientos se archiva». Llega con Ajustes, que es de donde se alcanza.
+   **Borrar cuentas y bancos todavía no existe**, con su regla de «sin movimientos se borra, con movimientos se archiva». Lo que sí existe desde la Fase 5 es **archivar**, en cuentas y en bancos, y es reversible: `archive` y `unarchive` escriben `is_archived` sin tocar `deleted_at`. Archivar no es borrar — la cuenta sigue contando en el patrimonio y el banco sigue agrupando las suyas—, así que no necesita tombstone ni regla de contenido.
 4. **Las líneas se consultan por la vista `live_entry_line`, nunca por `entry_line`.** Una línea solo cuenta si ni ella ni su asiento están borrados; filtrar solo por la línea deja vivas las líneas de asientos borrados y descuadra saldos e informes sin dar ningún síntoma.
 5. `PRAGMA foreign_keys = ON`. No es el valor por defecto de SQLite.
 6. Cada cambio de esquema es una **migración nueva y versionada**. Una migración ya publicada no se edita jamás, ni para corregir un typo.

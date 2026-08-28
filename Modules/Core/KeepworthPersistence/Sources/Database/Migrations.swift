@@ -93,6 +93,18 @@ enum Migrations {
             )
         }
 
+        // A bank the user no longer deals with leaves the pickers and keeps its accounts.
+        // `account` was born with this column; `institution` was not, because until Settings
+        // existed there was no way to archive anything.
+        migrator.registerMigration("v2.archivedInstitutions") { database in
+            try database.execute(
+                sql: """
+                    ALTER TABLE institution
+                        ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0;
+                    """
+            )
+        }
+
         return migrator
     }
 }

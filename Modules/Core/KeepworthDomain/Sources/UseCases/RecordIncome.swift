@@ -13,6 +13,8 @@ public struct RecordIncome: Sendable {
     }
 
     public struct Request: Hashable, Sendable {
+        /// The movement being rewritten, or `nil` for a new one.
+        public let id: EntryID?
         public let accountID: AccountID
         public let categoryID: AccountID
         /// How much came in, positive.
@@ -22,6 +24,7 @@ public struct RecordIncome: Sendable {
         public let note: String?
 
         public init(
+            id: EntryID? = nil,
             accountID: AccountID,
             categoryID: AccountID,
             amount: Money,
@@ -29,6 +32,7 @@ public struct RecordIncome: Sendable {
             payee: String? = nil,
             note: String? = nil
         ) {
+            self.id = id
             self.accountID = accountID
             self.categoryID = categoryID
             self.amount = amount
@@ -48,6 +52,7 @@ public struct RecordIncome: Sendable {
         try validateMovement(of: request.amount, outOf: category, into: account)
 
         let entry = try Entry.twoLine(
+            id: request.id ?? EntryID(),
             occurredOn: request.occurredOn,
             payee: request.payee,
             note: request.note,

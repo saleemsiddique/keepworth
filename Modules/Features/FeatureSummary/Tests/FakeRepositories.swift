@@ -56,6 +56,21 @@ actor FakeInstitutionRepository: InstitutionRepository {
         }
         changes?.notify()
     }
+
+    func archive(_ id: InstitutionID) async throws {
+        try await setArchived(true, on: id)
+    }
+
+    func unarchive(_ id: InstitutionID) async throws {
+        try await setArchived(false, on: id)
+    }
+
+    private func setArchived(_ isArchived: Bool, on id: InstitutionID) async throws {
+        let institution = try await institution(withID: id)
+        try await save(
+            Institution(id: institution.id, name: institution.name, isArchived: isArchived)
+        )
+    }
 }
 
 actor FakeAccountRepository: AccountRepository {
@@ -92,6 +107,14 @@ actor FakeAccountRepository: AccountRepository {
     }
 
     func archive(_ id: AccountID) async throws {
+        try await setArchived(true, on: id)
+    }
+
+    func unarchive(_ id: AccountID) async throws {
+        try await setArchived(false, on: id)
+    }
+
+    private func setArchived(_ isArchived: Bool, on id: AccountID) async throws {
         let account = try await account(withID: id)
         try await save(
             Account(
@@ -102,7 +125,7 @@ actor FakeAccountRepository: AccountRepository {
                 currency: account.currency,
                 symbolName: account.symbolName,
                 isSystem: account.isSystem,
-                isArchived: true
+                isArchived: isArchived
             )
         )
     }

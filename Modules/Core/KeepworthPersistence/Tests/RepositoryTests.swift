@@ -87,6 +87,50 @@ func archivingKeepsTheRow() async throws {
     #expect(try await ledger.accounts.account(withID: account.id).isArchived)
 }
 
+@Test("Unarchiving an account puts it back")
+func unarchivingRestoresTheAccount() async throws {
+    let ledger = try StoredLedger()
+    let account = try Account(name: "Efectivo", kind: .asset, currency: .eur)
+    try await ledger.accounts.save(account)
+    try await ledger.accounts.archive(account.id)
+
+    try await ledger.accounts.unarchive(account.id)
+
+    #expect(try await ledger.accounts.account(withID: account.id).isArchived == false)
+}
+
+@Test("A bank survives archiving and unarchiving, keeping its accounts")
+func archivingABankKeepsItsAccounts() async throws {
+    let ledger = try StoredLedger()
+    let bank = try Institution(name: "BBVA")
+    try await ledger.institutions.save(bank)
+    let account = try Account(
+        institutionID: bank.id,
+        name: "Nómina",
+        kind: .asset,
+        currency: .eur
+    )
+    try await ledger.accounts.save(account)
+
+    try await ledger.institutions.archive(bank.id)
+
+    #expect(try await ledger.institutions.institution(withID: bank.id).isArchived)
+    #expect(try await ledger.accounts.accounts(inInstitution: bank.id).count == 1)
+
+    try await ledger.institutions.unarchive(bank.id)
+    #expect(try await ledger.institutions.institution(withID: bank.id).isArchived == false)
+}
+
+@Test("Archiving a bank that is not there throws instead of doing nothing")
+func archivingAMissingBankThrows() async throws {
+    let ledger = try StoredLedger()
+    let ghost = InstitutionID()
+
+    await #expect(throws: RepositoryError.institutionNotFound(ghost)) {
+        try await ledger.institutions.archive(ghost)
+    }
+}
+
 @Test("A soft-deleted account disappears from every query but stays in the table")
 func softDeletedAccountDisappears() async throws {
     let ledger = try StoredLedger()

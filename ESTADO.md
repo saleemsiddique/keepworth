@@ -293,6 +293,7 @@ Este bloque explica el esquema; **la fuente autoritativa es `Modules/Core/Keepwo
 institution(                        -- BBVA, Trade Republic, MyInvestor
   id TEXT PRIMARY KEY,              -- UUID, nunca autoincremental (requisito de sync)
   name TEXT NOT NULL,
+  is_archived INTEGER NOT NULL DEFAULT 0,  -- migración v2: sale de los selectores, no del libro
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   deleted_at TEXT                   -- soft delete: tombstones obligatorios para sync
@@ -438,7 +439,7 @@ El saldo inicial de una cuenta tampoco contamina el informe: su contrapartida es
 - **Banco con cuentas vivas**: no se borra. Primero se archivan o se mueven sus cuentas.
 - La cuenta `is_system` («Saldo inicial») no se borra ni se renombra: es lo que hace que los números cuadren.
 
-**Las cuatro reglas de cuentas y bancos siguen sin escribir en código**: se alcanzan desde Ajustes, que no existe. `AccountRepository.archive` es lo único que hay de ese lado.
+**Las reglas de borrado de cuentas y bancos siguen sin escribir en código**: se alcanzan desde Ajustes, y la Fase 5 llega hasta archivar, no hasta borrar. Lo que sí existe: `archive` y `unarchive` en cuentas y en bancos, y los casos de uso `CreateAccount`, `UpdateAccount` y `ArchiveAccount`, que son los que respetan que la cuenta de sistema no se toca.
 
 Archivar una cuenta la saca del **editor**, no del libro: su dinero sigue siendo del usuario, así que Resumen la sigue enseñando y el patrimonio la sigue contando. Esconder la fila mientras el total del banco la incluye dejaría una cifra en pantalla que no suma las filas de debajo.
 
@@ -708,7 +709,7 @@ Lint limpio.
 
 **Lo que la Fase 2 obligó a añadir al dominio**: `save` en los repositorios de cuentas y bancos, `archive` en el de cuentas, el protocolo `SettingsRepository` y el caso de uso `SeedFirstLaunch`.
 
-**Lo que quedó fuera a propósito**: el borrado y la observación. Al cerrar la Fase 2, `AccountRepository.archive` era la única escritura de ese lado y el único `deleted_at` que se escribía era el que entierra las líneas que un asiento reguardado ya no tiene. *Borrar un movimiento* llegó en la Fase 4 bis, y la observación en la Fase 4 — como una señal de «algo cambió» y no con `ValueObservation` por consulta. **Siguen sin existir** el borrado de cuentas y bancos, con su regla, y `archive` en bancos: van con Ajustes.
+**Lo que quedó fuera a propósito**: el borrado y la observación. Al cerrar la Fase 2, `AccountRepository.archive` era la única escritura de ese lado y el único `deleted_at` que se escribía era el que entierra las líneas que un asiento reguardado ya no tiene. *Borrar un movimiento* llegó en la Fase 4 bis, y la observación en la Fase 4 — como una señal de «algo cambió» y no con `ValueObservation` por consulta. **Sigue sin existir** el borrado de cuentas y bancos, con su regla: va con la fase que traiga el borrado. `archive` en bancos llegó en la Fase 5.
 
 ### Fase 3 — Design System — **construida (2026-08-15)**
 
@@ -805,7 +806,7 @@ Alcance deliberadamente estrecho: **solo movimientos**. Borrar una cuenta o un b
 - **Movimientos pasa a `List`**, la única pantalla que lo usa: el swipe es una afordancia de `List`, y es la única lista que crece sin límite. Su cromo se apaga fila a fila con `plainRow()` para que se vea como el resto.
 - **En Resumen, long-press** en vez de swipe — que la sección 7 admite igual. Ese bloque son cinco filas dentro de un scroll de otras cosas, y un `List` no anida ahí.
 
-**Sigue pendiente**: borrar y archivar cuentas y bancos, con su regla, y `archive` en bancos. Van con Ajustes.
+**Sigue pendiente**: borrar cuentas y bancos, con su regla. Archivar unas y otros llegó en la Fase 5.
 
 ### Fase 5 — Editor de movimiento
 

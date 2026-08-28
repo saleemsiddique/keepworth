@@ -44,4 +44,29 @@ public struct SQLiteInstitutionRepository: InstitutionRepository {
             try InstitutionRecord(institution, timestamps: stored, updatedAt: now).save(db)
         }
     }
+
+    public func archive(_ id: InstitutionID) async throws {
+        try await setArchived(true, on: id)
+    }
+
+    public func unarchive(_ id: InstitutionID) async throws {
+        try await setArchived(false, on: id)
+    }
+
+    private func setArchived(_ isArchived: Bool, on id: InstitutionID) async throws {
+        let now = now()
+        let updated = try await database.writer.write { db in
+            try db.execute(
+                sql: """
+                    UPDATE institution SET is_archived = ?, updated_at = ?
+                    WHERE id = ? AND deleted_at IS NULL
+                    """,
+                arguments: [isArchived, now, id.rawValue.uuidString]
+            )
+            return db.changesCount
+        }
+        guard updated > 0 else {
+            throw RepositoryError.institutionNotFound(id)
+        }
+    }
 }
