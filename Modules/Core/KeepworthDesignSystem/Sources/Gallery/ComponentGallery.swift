@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The seven components arranged as a screen would arrange them, because a component looks
-/// right on its own and wrong next to its neighbours.
+/// Every component arranged as a screen would arrange them, because a component looks right
+/// on its own and wrong next to its neighbours.
 ///
 /// This is the visual review tool of the project: a new component that does not appear here is
 /// not finished. Reviewed in both themes — the dark one is where a literal colour gives itself
@@ -11,10 +11,20 @@ import SwiftUI
 /// String Catalog; the components take plain `String`, so nothing here is localisable anyway.
 public struct ComponentGallery: View {
     @State private var selection = Destination.summary
+    @State private var movementType = MovementType.expense
+    @State private var chosenAccount: String? = "Efectivo"
+    @State private var payee = "Mercadona"
+    @State private var typedAmount = DigitAmount(minorUnits: 4230)
 
     private enum Destination {
         case summary
         case transactions
+    }
+
+    private enum MovementType {
+        case expense
+        case income
+        case transfer
     }
 
     public init() {}
@@ -33,6 +43,8 @@ public struct ComponentGallery: View {
                     thisMonth
                     recent
                     emptySection
+                    editing
+                    picking
                     outOfContext
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -146,13 +158,72 @@ public struct ComponentGallery: View {
         }
     }
 
-    /// `PrimaryAction` belongs to the movement editor of phase 5, not to a summary: there is
-    /// nothing to save here. It appears under its own heading so the gallery stays a catalogue
-    /// of the seven components rather than a proposal for one screen.
+    /// The entry primitives in the shape the movement editor uses them: the type on top, the
+    /// figure being typed, the rows that open a picker, and the keypad underneath.
+    private var editing: some View {
+        VStack(alignment: .leading, spacing: Spacing.row) {
+            SectionCaption("Editar un movimiento")
+
+            ChoiceBar(
+                selection: $movementType,
+                items: [
+                    ChoiceItem(tag: MovementType.expense, title: "Gasto"),
+                    ChoiceItem(tag: MovementType.income, title: "Ingreso"),
+                    ChoiceItem(tag: MovementType.transfer, title: "Traspaso"),
+                ]
+            )
+
+            VStack(spacing: 0) {
+                FormRow(title: "Cuenta", value: "Efectivo") {}
+                Hairline()
+                FormRow(title: "Categoría", value: "Supermercado") {}
+                Hairline()
+                FormRow(title: "Fecha", value: "28 de agosto de 2026") {}
+                Hairline()
+                TextEntryRow(title: "Beneficiario", prompt: "Opcional", text: $payee)
+            }
+
+            AmountKeypad(
+                onDigit: { typedAmount.append($0) },
+                onDelete: { typedAmount.deleteLast() }
+            )
+        }
+    }
+
+    /// What opens when one of those rows is tapped.
+    private var picking: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionCaption("Elegir una cuenta")
+            pickerRow("Efectivo", symbol: "banknote")
+            Hairline()
+            pickerRow("BBVA · Nómina", symbol: "building.columns")
+            Hairline()
+            pickerRow("Visa", symbol: "creditcard")
+        }
+    }
+
+    private func pickerRow(_ title: String, symbol: String) -> some View {
+        SelectionRow(
+            tag: title,
+            selection: chosenAccount,
+            title: title,
+            symbolName: symbol
+        ) {
+            chosenAccount = title
+        }
+    }
+
+    /// Components no real screen would put in a summary. They appear under their own heading
+    /// so the gallery stays a catalogue rather than a proposal for one screen.
+    ///
+    /// `SheetSurface` is missing on purpose: it paints a whole modal layer, so showing it here
+    /// would mean drawing a sheet inside a scroll. Its own two previews are where it is
+    /// reviewed.
     private var outOfContext: some View {
         VStack(alignment: .leading, spacing: Spacing.row) {
             SectionCaption("Fuera de contexto")
             PrimaryAction("Guardar") {}
+            PrimaryAction("Guardar", availability: .unavailable) {}
         }
     }
 }

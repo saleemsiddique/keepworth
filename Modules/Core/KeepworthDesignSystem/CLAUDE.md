@@ -8,7 +8,7 @@ Traduce la dirección estética "Ledger" a componentes SwiftUI. Es la **única**
 
 Tampoco tiene String Catalog ni debe tenerlo: no sabe en qué idioma está la pantalla. Los componentes reciben `String` y quien los usa es quien localiza.
 
-**Expone**: tokens, tipografía, espaciado, los siete componentes y las dos galerías.
+**Expone**: tokens, tipografía, espaciado, los componentes y las dos galerías.
 
 ## Los siete tokens
 
@@ -60,6 +60,8 @@ Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso. Todas se c
 
 `Spacing` nombra las medidas por lo que separan, no como una escala de tallas, y solo están las que algún componente usa hoy. Cuando una pantalla de una fase posterior necesite un hueco que no esté, se añade con nombre — no se aproxima con el más parecido.
 
+Con una medida que no separa nada: `minimumTapTarget` son los 44 pt por debajo de los cuales Apple no deja bajar nada pulsable. Vive aquí porque la alternativa era un 44 suelto dentro del teclado numérico, que es el literal que este archivo existe para evitar.
+
 ## Contrato de cada pantalla
 
 1. Una acción primaria por pantalla. El resto vive en gestos nativos: swipe, long-press, tirar para cerrar.
@@ -80,11 +82,27 @@ Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso. Todas se c
 | `SectionCaption` | `SectionCaption(_ text: String)` |
 | `HeadlineAmount` | `init(caption: String, amount: String, detail: String? = nil)` |
 | `LedgerRow` | `init(title: String, subtitle: String? = nil, symbolName: String? = nil, amount: String, direction: AmountDirection = .neutral)` |
-| `PrimaryAction` | `init(_ title: String, action: @escaping () -> Void)` |
+| `PrimaryAction` | `init(_ title: String, availability: ActionAvailability = .available, action: @escaping () -> Void)` |
 | `EmptyStateLine` | `EmptyStateLine(_ text: String)` |
 | `LedgerTabBar` | `init(selection: Binding<Tag>, leading: LedgerTabItem<Tag>, trailing: LedgerTabItem<Tag>, centerLabel: String, centerAction: @escaping () -> Void)` |
 
+Y los de entrada, que llegaron con la Fase 5 — hasta entonces los siete de arriba eran de solo lectura y no había ni un campo en toda la app:
+
+| Componente | Firma |
+|---|---|
+| `DigitAmount` | `init(minorUnits: Int64 = 0)`, con `append(_:)` y `deleteLast()` |
+| `AmountKeypad` | `init(onDigit: @escaping (Int) -> Void, onDelete: @escaping () -> Void)` |
+| `FormRow` | `init(title: String, value: String, action: @escaping () -> Void)` |
+| `TextEntryRow` | `init(title: String, prompt: String, text: Binding<String>)` |
+| `ChoiceBar` | `init(selection: Binding<Tag>, items: [ChoiceItem<Tag>])` |
+| `SelectionRow` | `init(tag: Tag, selection: Tag?, title: String, subtitle: String? = nil, symbolName: String? = nil, action: @escaping () -> Void)` |
+| `SheetSurface` | `init(title: String, actionTitle: String, availability: ActionAvailability = .available, action: @escaping () -> Void, @ViewBuilder content: () -> Content)` |
+
 Todos son tontos: pintan lo que reciben, no lo calculan.
+
+**`DigitAmount` es la única excepción, y no ve dinero.** Un importe se teclea dígito a dígito sobre las unidades menores que ya suma —4, 2, 3, 0 se lee 0,04 / 0,42 / 4,23 / 42,30—, así que nunca existe a medio escribir y no hay nada que parsear ni que rechazar. Cuenta en `Int64` porque el módulo no puede ver `Money`; quien lo usa es quien le pone divisa.
+
+**La sheet no tiene botón de cancelar.** Salir sin guardar es el arrastre nativo, la misma regla que pone el borrado en un swipe: una acción primaria por pantalla y el resto en gestos que el sistema ya enseñó.
 
 Dos decisiones que conviene no reabrir por costumbre:
 
@@ -93,9 +111,14 @@ Dos decisiones que conviene no reabrir por costumbre:
 
 `LedgerRow` empezó con un `isIncoming: Bool`, y al añadirse el token `expense` apareció el tercer caso que el propio contrato preveía. Hoy es `AmountDirection` —`.incoming`, `.outgoing`, `.neutral`—, y **el módulo no tiene ningún flag booleano**. Que siga así.
 
+Los componentes de entrada lo respetan por dos caminos distintos, y merece la pena saber cuál usar:
+
+- **Si el estado es «cuál de estos es»**, se compara el tag. `SelectionRow` recibe el suyo y el seleccionado en vez de un `isSelected`, igual que `LedgerTabBar` y `ChoiceBar` comparan dentro. Sin booleano y sin tipo nuevo.
+- **Si el estado es del propio componente**, se nombra con un enum. `ActionAvailability` —`.available`, `.unavailable`— es lo que apaga el botón de guardar mientras falte algo; `PrimaryAction("Guardar", availability: .unavailable)` dice en el sitio de llamada lo que un `true` dejaría a adivinar.
+
 ## Verificación
 
-Cada componente lleva previews en **ambos temas**. `ComponentGallery` es la herramienta de revisión visual del proyecto: si un componente nuevo no aparece en ella, no está terminado. `TokenGallery` enseña la paleta y las voces tipográficas.
+Cada componente lleva previews en **ambos temas**. `ComponentGallery` es la herramienta de revisión visual del proyecto: si un componente nuevo no aparece en ella, no está terminado. Con una excepción razonada: `SheetSurface` pinta una capa modal entera, así que meterlo en la galería sería dibujar una sheet dentro de un scroll. Se revisa en sus dos previews. `TokenGallery` enseña la paleta y las voces tipográficas.
 
 Las dos galerías son herramientas de desarrollo, no pantallas: su texto va con `Text(verbatim:)` o como dato de ejemplo, y **no entra en el String Catalog**.
 
@@ -111,4 +134,4 @@ Los tests comprueban tres cosas por token, y cada una tapa un fallo silencioso d
 2. **Que sus valores claro y oscuro son los hex documentados** — sin esto, un Color Set al que le falte la variante oscura pasaría: resuelve al valor claro en los dos temas.
 3. **Que el alfa es 1 en ambos** — un `"alpha": "0.500"` colado en un `Contents.json` pasa las dos anteriores y no se nota hasta que el color está encima de otra cosa.
 
-No hay tests de snapshot: meterían una dependencia externa, y solo GRDB está aprobada.
+No hay tests de snapshot: meterían una dependencia externa, y solo GRDB está aprobada. Lo demás no se testea porque no hay nada que afirmar sobre una vista tonta — salvo `DigitAmount`, que es la única lógica del módulo y sí los tiene, incluido el caso de que un importe imposible de representar deje de crecer en vez de dar la vuelta a negativo.

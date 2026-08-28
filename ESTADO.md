@@ -564,7 +564,11 @@ Dos voces, ambas del sistema. Cero assets, cero licencias, cero peso.
 
 ### Componentes
 
-`Hairline`, `SectionCaption`, `HeadlineAmount`, `LedgerRow`, `PrimaryAction`, `EmptyStateLine`, `LedgerTabBar`. Los siete están construidos; sus firmas están en el `CLAUDE.md` del módulo.
+De lectura: `Hairline`, `SectionCaption`, `HeadlineAmount`, `LedgerRow`, `PrimaryAction`, `EmptyStateLine`, `LedgerTabBar`.
+
+De entrada, desde la Fase 5: `DigitAmount`, `AmountKeypad`, `FormRow`, `TextEntryRow`, `ChoiceBar`, `SelectionRow`, `SheetSurface`. Hasta entonces los siete primeros eran de solo lectura y no había ni un campo, ni un selector, ni una sheet en toda la app.
+
+Sus firmas están en el `CLAUDE.md` del módulo.
 
 Cada uno con previews en **ambos temas**. Si un componente nuevo no aparece en `ComponentGallery`, no está terminado.
 
