@@ -52,4 +52,10 @@ public enum AccountError: Error, Equatable {
     /// A category or the opening balance account was put inside a bank. A bank groups
     /// places holding money, and a category is not one.
     case kindCannotBelongToInstitution(AccountKind)
+    /// "Opening balance" was renamed or archived. It is what every starting balance is
+    /// booked against, so touching it makes the figures stop adding up.
+    case systemAccountCannotChange(AccountID)
+    /// A category was created through the door meant for places that hold money. Categories
+    /// are accounts too, but they are created and listed apart, and never mixed on screen.
+    case kindCannotHoldMoney(AccountKind)
 }

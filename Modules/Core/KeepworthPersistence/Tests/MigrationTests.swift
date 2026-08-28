@@ -43,6 +43,29 @@ func migratesDatabaseWithData() throws {
     #expect(names == ["Efectivo"])
 }
 
+@Test("A bank stored before archiving existed comes back as not archived")
+func archivedColumnDefaultsForBanksThatPredateIt() throws {
+    let queue = try DatabaseQueue()
+    // Stopping at v1 is what makes this a migration test rather than a schema one: it is the
+    // device that installed the app before Settings shipped.
+    try Migrations.migrator.migrate(queue, upTo: "v1.initialSchema")
+    try queue.write { database in
+        try database.execute(
+            sql: """
+                INSERT INTO institution (id, name, created_at, updated_at)
+                VALUES ('bank', 'BBVA', '2026-01-01', '2026-01-01');
+                """
+        )
+    }
+
+    try Migrations.migrator.migrate(queue)
+
+    let archived = try queue.read {
+        try Bool.fetchOne($0, sql: "SELECT is_archived FROM institution WHERE id = 'bank'")
+    }
+    #expect(archived == false)
+}
+
 @Test("A category with a bank is rejected by the schema, not only by the domain")
 func schemaRejectsCategoryInsideInstitution() throws {
     let queue = try DatabaseQueue()

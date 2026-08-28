@@ -12,6 +12,10 @@ public struct RecordExpense: Sendable {
     }
 
     public struct Request: Hashable, Sendable {
+        /// The movement being rewritten, or `nil` for a new one. The editor corrects a
+        /// movement by sending the same request it would send to create it, carrying the id
+        /// of the one on screen.
+        public let id: EntryID?
         public let accountID: AccountID
         public let categoryID: AccountID
         /// How much was spent, positive.
@@ -21,6 +25,7 @@ public struct RecordExpense: Sendable {
         public let note: String?
 
         public init(
+            id: EntryID? = nil,
             accountID: AccountID,
             categoryID: AccountID,
             amount: Money,
@@ -28,6 +33,7 @@ public struct RecordExpense: Sendable {
             payee: String? = nil,
             note: String? = nil
         ) {
+            self.id = id
             self.accountID = accountID
             self.categoryID = categoryID
             self.amount = amount
@@ -47,6 +53,7 @@ public struct RecordExpense: Sendable {
         try validateMovement(of: request.amount, outOf: account, into: category)
 
         let entry = try Entry.twoLine(
+            id: request.id ?? EntryID(),
             occurredOn: request.occurredOn,
             payee: request.payee,
             note: request.note,

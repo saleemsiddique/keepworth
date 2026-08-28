@@ -15,7 +15,7 @@ Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta cap
 - `LedgerChanges`, que avisa de que el libro se movió sin decir qué. Es lo que permite que una pantalla se refresque sola sin que cada camino de escritura tenga que acordarse de a quién avisar.
 - `MoneyFormatter`, la única forma de convertir `Money` en texto.
 - Dos formas de preguntar por movimientos, y no son intercambiables: `EntryLineQuery` pregunta **cuánto suman** unas cuentas y responde con patas sueltas; `EntryQuery` pregunta **qué pasó** y responde con asientos enteros.
-- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `DeleteMovement`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
+- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `DeleteMovement`, `CreateAccount`, `UpdateAccount`, `ArchiveAccount`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
 - Errores de dominio descriptivos, nunca `nil` para señalar fallo.
 
 **`Decimal` solo aparece en `MoneyFormatter`, y solo en el último paso hacia el texto.** La aritmética sigue siendo `Int64`, que es lo que permite que un asiento sume exactamente cero. Formatear es el único sitio donde una representación decimal no solo es segura sino obligatoria, porque `NumberFormatter` habla decimales. Un `Decimal` en cualquier otro archivo del dominio es un bug.

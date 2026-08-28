@@ -7,6 +7,12 @@ public protocol InstitutionRepository: Sendable {
     func allInstitutions() async throws -> [Institution]
     /// Inserts it, or updates the stored one with the same id.
     func save(_ institution: Institution) async throws
+    /// A bank the user no longer deals with: it leaves the pickers and keeps its accounts.
+    ///
+    /// There is no delete. A bank with live accounts must not disappear, and one without
+    /// them is cheap to leave archived, so archiving is the whole of it.
+    func archive(_ id: InstitutionID) async throws
+    func unarchive(_ id: InstitutionID) async throws
 }
 
 public protocol AccountRepository: Sendable {
@@ -18,6 +24,9 @@ public protocol AccountRepository: Sendable {
     /// Archiving is what happens instead of deleting once an account has movements:
     /// it leaves the editor but keeps its history.
     func archive(_ id: AccountID) async throws
+    /// Puts it back in the editor. Archiving has to be undoable or it reads as deleting,
+    /// and the user would stop trusting it with an account they still use.
+    func unarchive(_ id: AccountID) async throws
 }
 
 /// Preferences that follow the user across devices. Small and few, so one typed accessor
