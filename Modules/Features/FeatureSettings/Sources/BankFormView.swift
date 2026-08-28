@@ -10,7 +10,7 @@ struct BankFormView: View {
 
     var body: some View {
         ZStack {
-            Color.bg.ignoresSafeArea()
+            Color.surface.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 TextEntryRow(

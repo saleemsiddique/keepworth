@@ -36,7 +36,7 @@ public struct SettingsView: View {
             // applied to each branch, so `task` would be cancelled and restarted on the first
             // state change.
             ZStack {
-                Color.bg.ignoresSafeArea()
+                Color.surface.ignoresSafeArea()
 
                 switch model.state {
                 case .loading:
@@ -93,7 +93,7 @@ public struct SettingsView: View {
             }
             .padding(Spacing.screenMargin)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.bg)
+            .background(.surface)
         }
     }
 

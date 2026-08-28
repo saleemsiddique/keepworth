@@ -12,11 +12,12 @@
 
 Se han corregido cifras que se venían arrastrando mal desde la Fase 1. La convención, para que deje de deformarse:
 
-- Se dice **casos ejecutados**, no atributos `@Test` escritos. Un test parametrizado es una función y muchos casos, y `xcodebuild` cuenta los casos.
+- Se dice **casos ejecutados**, no atributos `@Test` escritos. Un test parametrizado es una función y muchos casos.
+- **La línea «Test run with N tests» de la consola cuenta funciones, no casos**, y de un test parametrizado solo imprime el arranque del primer argumento. Para el número real hay que sumar los argumentos de cada `@Test(arguments:)` y restar su función. Hoy solo hay parametrizados en Domain (seis funciones, 24 casos) y en DesignSystem (una, siete casos).
 - Se dice **de qué módulo**. El total del repositorio incluye los placeholders de Sync y AppCore, que no son de ninguna fase.
 - **La cifra vive solo aquí.** Repetirla en cada sección de fase es lo que la hizo derivar tres veces: las fases dicen «tests en verde» y quien quiera el número lo busca en esta línea.
 
-Medido el 2026-08-16, con la Fase 4 bis terminada: **208 casos ejecutados** — Domain 113, Persistence 48, FeatureSummary 14, FeatureSupport 13, DesignSystem 7, AppCore 6, FeatureTransactions 6, y 1 placeholder en Sync.
+Medido el 2026-08-28, con la Fase 5 terminada: **269 casos ejecutados** — Domain 128, Persistence 52, FeatureSettings 19, DesignSystem 15, FeatureMovementEditor 15, FeatureSummary 14, FeatureSupport 13, AppCore 6, FeatureTransactions 6, y 1 placeholder en Sync.
 
 ---
 
@@ -86,6 +87,7 @@ Modules/Features/FeatureSupport/             lo que dos pantallas dibujan igual
 Modules/Features/FeatureSummary/             Resumen y el informe del periodo (Fase 4)
 Modules/Features/FeatureTransactions/        la lista de movimientos (Fase 4)
 Modules/Features/FeatureSettings/            cuentas y bancos (Fase 5)
+Modules/Features/FeatureMovementEditor/      registrar y corregir un movimiento (Fase 5)
 Modules/Core/KeepworthSync/                  CLAUDE.md + placeholder + test
 Modules/Core/KeepworthDesignSystem/          CLAUDE.md + la capa completa (Fase 3)
 Modules/KeepworthAppCore/                    CLAUDE.md + RootView + test
@@ -813,9 +815,23 @@ Alcance deliberadamente estrecho: **solo movimientos**. Borrar una cuenta o un b
 
 **Sigue pendiente**: borrar cuentas y bancos, con su regla. Archivar unas y otros llegó en la Fase 5.
 
-### Fase 5 — Editor de movimiento
+### Fase 5 — Editor de movimiento y Ajustes — **construida (2026-08-28)**
 
-Sheet con detents. Teclado numérico, selección de cuenta y categoría, fecha y beneficiario. Traduce la entrada simple del usuario en un asiento equilibrado de dos líneas. Es la pantalla de mayor uso de toda la app: merece pulido específico.
+Sheet con teclado propio de dígitos, conmutador de tipo, dos selectores, fecha y beneficiario. Traduce la entrada simple del usuario en un asiento equilibrado de dos líneas, y **corrige** uno existente reescribiéndolo sobre su propio id.
+
+Se repartió en cuatro PR: dominio y persistencia (#14), primitivas de entrada del design system (#15), Ajustes (#16) y el editor.
+
+Decisiones que se tomaron al construirla:
+
+- **Corregir es registrar otra vez sobre el mismo id.** Las tres `Request` ganaron un `EntryID?` opcional en vez de aparecer un caso de uso de edición aparte, que habría duplicado la validación de tipos de cuenta en dos caminos.
+- **El importe se teclea, no se parsea.** `DigitAmount` acumula unidades menores, así que la cifra nunca existe a medio escribir y desaparece la clase de fallo de un campo de texto: la coma frente al punto, el segundo separador, el campo vacío.
+- **El signo del saldo de partida sale del tipo de cuenta**, no de un interruptor: lo que una tarjeta ya tenía es dinero que se debe.
+- **Un saldo de partida no se abre en el editor.** Su contrapartida es la cuenta `.equity` interna, que no sale en ningún selector; guardarlo como otra cosa lo convertiría en un movimiento que el usuario no hizo. `EditableMovement` devuelve `nil` y hay test.
+- **Los booleanos no entraron en el design system.** Cuando el estado es «cuál de estos es» se comparan tags; cuando es del propio componente se nombra con enum (`ActionAvailability`).
+- **`sharedBackgroundVisibility(.hidden)`** en todo `ToolbarItem`: iOS 26 dibuja una cápsula de cristal detrás de los controles de barra, y aquí no hay tarjetas. Lo dibuja el contenedor, no el botón, así que `.buttonStyle(.plain)` no basta.
+- **Ajustes llega hasta archivar, no hasta borrar.** Las reglas de borrado de cuentas y bancos siguen sin escribirse.
+
+**Lo que quedó fuera a propósito**: gestionar categorías, corregir un saldo de partida ya declarado, y buscar y filtrar en Movimientos.
 
 ### Fase 6 — Import / Export CSV
 

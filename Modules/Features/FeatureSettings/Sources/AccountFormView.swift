@@ -24,7 +24,7 @@ struct AccountFormView: View {
 
     var body: some View {
         ZStack {
-            Color.bg.ignoresSafeArea()
+            Color.surface.ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.betweenSections) {
@@ -137,7 +137,7 @@ struct AccountFormView: View {
 
     private var bankPicker: some View {
         ZStack {
-            Color.bg.ignoresSafeArea()
+            Color.surface.ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {

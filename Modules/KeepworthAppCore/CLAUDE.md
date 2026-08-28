@@ -45,8 +45,9 @@ Dos destinos en la barra inferior con el botón de añadir en el centro exacto, 
 ```
 
 - **Resumen** — patrimonio neto, cuentas agrupadas por banco, lo gastado y ahorrado del mes, movimientos recientes.
-- **⊕** — abre el editor de movimiento como sheet con detents. Único elemento con color de acento en la barra. **Inerte hasta la Fase 5**, que es la que trae el editor: un botón que abriera una hoja vacía sería peor que uno que espera.
-- **Movimientos** — lista completa, buscable y filtrable.
+- **⊕** — abre el editor de movimiento como sheet. Único elemento con color de acento en la barra. Vivo desde la Fase 5.
+- **Movimientos** — lista completa. Buscar y filtrar siguen sin existir.
+- **Editor de movimiento** — sheet, desde el ⊕ para uno nuevo y desde el tap sobre una fila para corregirlo. Se monta aquí y no en las pantallas que lo abren: una feature nunca importa otra feature, así que Resumen y Movimientos reciben un `onSelect` y no saben que el editor existe. **Un saldo de partida no se abre**: su contrapartida es la cuenta interna de patrimonio, que no sale en ningún selector.
 - **⚙ Ajustes** — en la toolbar de Resumen, no en la barra inferior. Sheet modal con su propio `NavigationStack`: configurar la app no es un detalle del dinero, y así la pila de Resumen sigue siendo el único sitio donde vive el informe. Desde la Fase 5 gestiona **cuentas y bancos**: crear, renombrar y archivar, con el saldo de partida al abrir una cuenta. Categorías, import/export, apariencia, privacidad e iCloud siguen sin existir.
 - **Informe** — pantalla de detalle empujada desde Resumen. Hoy enseña el periodo en curso; las flechas entre meses y el selector de rango libre están pendientes.
 
