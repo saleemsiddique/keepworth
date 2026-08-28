@@ -27,4 +27,10 @@ public enum Spacing {
 
     /// The thickness of a rule. See `Hairline`.
     public static let hairline: CGFloat = 0.5
+
+    /// The smallest a tappable thing may be. Not a gap like the rest, and it lives here
+    /// anyway: it is a measurement the design system owns, and the alternative was a bare 44
+    /// inside a component, which is the literal this file exists to prevent. Apple's floor,
+    /// and the keypad is where it binds — a key drawn to fit its glyph would come out smaller.
+    public static let minimumTapTarget: CGFloat = 44
 }
