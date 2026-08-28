@@ -1,7 +1,10 @@
+import FeatureMovementEditor
+import FeatureSettings
 import FeatureSummary
 import FeatureSupport
 import FeatureTransactions
 import KeepworthDesignSystem
+import KeepworthDomain
 import SwiftUI
 
 /// The app's root view: opens the ledger, seeds it if it is new, and shows the two
@@ -75,6 +78,29 @@ private struct LedgerTabs: View {
     let dependencies: Dependencies
 
     @State private var selection: Destination = .summary
+    @State private var isShowingSettings = false
+    /// Which movement the editor is open on, or `.new` for one that does not exist yet. One
+    /// value rather than a flag plus an entry, so "open" and "on what" cannot disagree.
+    @State private var editing: Editing?
+
+    private enum Editing: Hashable, Identifiable {
+        case new
+        case correcting(Entry)
+
+        var id: EntryID? {
+            switch self {
+            case .new: nil
+            case .correcting(let entry): entry.id
+            }
+        }
+
+        var entry: Entry? {
+            switch self {
+            case .new: nil
+            case .correcting(let entry): entry
+            }
+        }
+    }
 
     enum Destination: Hashable {
         case summary
@@ -95,8 +121,31 @@ private struct LedgerTabs: View {
                             changes: dependencies.changes
                         ),
                         deletion: MovementDeletion(entries: dependencies.entries),
-                        formatter: dependencies.formatter
+                        formatter: dependencies.formatter,
+                        onSelect: open
                     )
+                    // Mounted here and not inside `SummaryView`: a feature never imports
+                    // another feature, so the summary cannot know `FeatureSettings` exists.
+                    // The composition root is the only place that knows both.
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                isShowingSettings = true
+                            } label: {
+                                Image(systemName: "gearshape")
+                                    .fontWeight(.light)
+                                    .foregroundStyle(.ink)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(
+                                Text("settings.open", bundle: .module)
+                            )
+                        }
+                        // The toolbar item, not the button, is what draws the glass capsule
+                        // iOS puts behind a bar control. This design system has no cards and
+                        // no shadows, and a toolbar is not an exception to that.
+                        .sharedBackgroundVisibility(.hidden)
+                    }
                 }
             case .transactions:
                 NavigationStack {
@@ -107,7 +156,8 @@ private struct LedgerTabs: View {
                             changes: dependencies.changes
                         ),
                         deletion: MovementDeletion(entries: dependencies.entries),
-                        formatter: dependencies.formatter
+                        formatter: dependencies.formatter,
+                        onSelect: open
                     )
                 }
             }
@@ -125,11 +175,52 @@ private struct LedgerTabs: View {
                     symbolName: "list.bullet"
                 ),
                 centerLabel: String(localized: "tab.add", bundle: .module),
-                // Inert until phase 5 brings the movement editor. A button that opened an
-                // empty sheet would be worse than one that waits.
-                centerAction: {}
+                centerAction: { editing = .new }
             )
         }
         .background(.bg)
+        .sheet(isPresented: $isShowingSettings) {
+            settings
+        }
+        .sheet(item: $editing) { editor(for: $0) }
+    }
+
+    /// A starting balance is not opened. Its counterpart is the internal equity account, which
+    /// appears in no picker, so the editor could not represent it — and saving it as anything
+    /// else would turn it into a movement the user never made.
+    private func open(_ entry: Entry) {
+        editing = .correcting(entry)
+    }
+
+    private func editor(for editing: Editing) -> some View {
+        MovementEditorView(
+            model: MovementEditorModel(
+                editing: editing.entry,
+                accounts: dependencies.accounts,
+                entries: dependencies.entries,
+                settings: dependencies.settings
+            ),
+            formatter: dependencies.formatter
+        )
+        .presentationDetents([.large])
+    }
+
+    /// Built when the sheet opens rather than held alongside the tabs, so its observation of
+    /// the ledger lasts exactly as long as the screen does.
+    private var settings: some View {
+        SettingsView(
+            model: SettingsModel(
+                institutions: dependencies.institutions,
+                accounts: dependencies.accounts,
+                settings: dependencies.settings,
+                changes: dependencies.changes
+            ),
+            dependencies: SettingsDependencies(
+                institutions: dependencies.institutions,
+                accounts: dependencies.accounts,
+                entries: dependencies.entries,
+                formatter: dependencies.formatter
+            )
+        )
     }
 }

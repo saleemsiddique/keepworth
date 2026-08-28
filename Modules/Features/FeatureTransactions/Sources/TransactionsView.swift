@@ -10,17 +10,22 @@ public struct TransactionsView: View {
     @State private var deletion: MovementDeletion
     private let formatter: MoneyFormatter
     private let dayFormat: Date.FormatStyle
+    /// What to do when a movement is tapped. The list does not know the editor exists — a
+    /// feature never imports another feature — so the composition root passes this in.
+    private let onSelect: (Entry) -> Void
 
     public init(
         model: TransactionsModel,
         deletion: MovementDeletion,
         formatter: MoneyFormatter,
-        locale: Locale = .autoupdatingCurrent
+        locale: Locale = .autoupdatingCurrent,
+        onSelect: @escaping (Entry) -> Void
     ) {
         self._model = State(initialValue: model)
         self._deletion = State(initialValue: deletion)
         self.formatter = formatter
         self.dayFormat = CalendarDate.longDayStyle(in: locale)
+        self.onSelect = onSelect
     }
 
     public var body: some View {
@@ -71,12 +76,18 @@ public struct TransactionsView: View {
             ForEach(days) { day in
                 Section {
                     ForEach(day.movements) { movement in
-                        MovementRow(
-                            entry: movement,
-                            accountNames: model.accountNames,
-                            moneyAccountIDs: model.moneyAccountIDs,
-                            formatter: formatter
-                        )
+                        Button {
+                            onSelect(movement)
+                        } label: {
+                            MovementRow(
+                                entry: movement,
+                                accountNames: model.accountNames,
+                                moneyAccountIDs: model.moneyAccountIDs,
+                                formatter: formatter
+                            )
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
                         .plainRow()
                         .swipeActions(edge: .trailing) {
                             Button(

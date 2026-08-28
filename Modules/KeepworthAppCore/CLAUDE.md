@@ -18,6 +18,8 @@ Si una feature necesita algo que hoy no está en los protocolos de `Domain`, la 
 
 **`Dependencies.live()` no se llama desde el actor principal.** Abrir la base ejecuta las migraciones, y `SQLiteLedgerChanges` arranca una observación que bloquea hasta conseguir acceso de escritura: en el hilo principal eso congela el primer fotograma. `RootView` lo construye en una tarea desprendida por eso.
 
+**El ⚙ se monta aquí, no en `SummaryView`.** Una feature nunca importa otra feature, así que Resumen no puede saber que `FeatureSettings` existe: `LedgerTabs` es quien le pone la toolbar y quien presenta la sheet. Lo mismo valdrá para el editor de movimiento.
+
 El identificador del App Group **no está escrito aquí**: sale del Info.plist, que `Project.swift` rellena desde la misma constante que usa para los entitlements. Ya tiene que coincidir en dos sitios; una tercera copia sería un tercer sitio del que se desincroniza.
 
 ## Primer arranque
@@ -43,9 +45,10 @@ Dos destinos en la barra inferior con el botón de añadir en el centro exacto, 
 ```
 
 - **Resumen** — patrimonio neto, cuentas agrupadas por banco, lo gastado y ahorrado del mes, movimientos recientes.
-- **⊕** — abre el editor de movimiento como sheet con detents. Único elemento con color de acento en la barra. **Inerte hasta la Fase 5**, que es la que trae el editor: un botón que abriera una hoja vacía sería peor que uno que espera.
-- **Movimientos** — lista completa, buscable y filtrable.
-- **⚙ Ajustes** — en la toolbar, no en la barra inferior. **Todavía no existe**; sin fase asignada.
+- **⊕** — abre el editor de movimiento como sheet. Único elemento con color de acento en la barra. Vivo desde la Fase 5.
+- **Movimientos** — lista completa. Buscar y filtrar siguen sin existir.
+- **Editor de movimiento** — sheet, desde el ⊕ para uno nuevo y desde el tap sobre una fila para corregirlo. Se monta aquí y no en las pantallas que lo abren: una feature nunca importa otra feature, así que Resumen y Movimientos reciben un `onSelect` y no saben que el editor existe. **Un saldo de partida no se abre**: su contrapartida es la cuenta interna de patrimonio, que no sale en ningún selector.
+- **⚙ Ajustes** — en la toolbar de Resumen, no en la barra inferior. Sheet modal con su propio `NavigationStack`: configurar la app no es un detalle del dinero, y así la pila de Resumen sigue siendo el único sitio donde vive el informe. Desde la Fase 5 gestiona **cuentas y bancos**: crear, renombrar y archivar, con el saldo de partida al abrir una cuenta. Categorías, import/export, apariencia, privacidad e iCloud siguen sin existir.
 - **Informe** — pantalla de detalle empujada desde Resumen. Hoy enseña el periodo en curso; las flechas entre meses y el selector de rango libre están pendientes.
 
 **Regla de crecimiento**: presupuestos y metas serán secciones del scroll de Resumen; el informe es una pantalla de detalle empujada desde Resumen; buscar y filtrar vive en Movimientos, y las programadas son un filtro suyo. **Nunca se añade una tercera tab.** Si una funcionalidad nueva no encuentra sitio bajo esta regla, se discute con el usuario antes de tocar la navegación.

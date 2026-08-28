@@ -8,12 +8,21 @@ public struct SummaryView: View {
     @State private var model: SummaryModel
     @State private var deletion: MovementDeletion
     private let formatter: MoneyFormatter
+    /// What to do when a movement is tapped. The summary does not know the editor exists —
+    /// a feature never imports another feature — so the composition root passes this in.
+    private let onSelect: (Entry) -> Void
     @State private var showsReport = false
 
-    public init(model: SummaryModel, deletion: MovementDeletion, formatter: MoneyFormatter) {
+    public init(
+        model: SummaryModel,
+        deletion: MovementDeletion,
+        formatter: MoneyFormatter,
+        onSelect: @escaping (Entry) -> Void
+    ) {
         self._model = State(initialValue: model)
         self._deletion = State(initialValue: deletion)
         self.formatter = formatter
+        self.onSelect = onSelect
     }
 
     public var body: some View {
@@ -151,12 +160,18 @@ public struct SummaryView: View {
                 // Long press and not swipe, which `ESTADO.md` §7 allows just as much: this
                 // block is five rows inside a scroll of other things, and swipe belongs to a
                 // `List`, which cannot nest here. The full list has the swipe.
-                MovementRow(
-                    entry: entry,
-                    accountNames: snapshot.accountNames,
-                    moneyAccountIDs: snapshot.moneyAccountIDs,
-                    formatter: formatter
-                )
+                Button {
+                    onSelect(entry)
+                } label: {
+                    MovementRow(
+                        entry: entry,
+                        accountNames: snapshot.accountNames,
+                        moneyAccountIDs: snapshot.moneyAccountIDs,
+                        formatter: formatter
+                    )
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
                 .contextMenu {
                     Button(
                         String(localized: "summary.delete", bundle: .module),

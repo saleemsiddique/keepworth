@@ -12,6 +12,17 @@ extension CalendarDate {
     /// Falls back to `yyyy-MM-dd` if the instant cannot be built, which a Gregorian calendar
     /// and a validated date do not allow.
     public func formatted(_ style: Date.FormatStyle) -> String {
+        guard let instant = noonUTC else { return description }
+        return instant.formatted(style)
+    }
+
+    /// The day as an instant, **at noon UTC**, for the two things that need a `Date`: writing
+    /// it out, and handing it to the system date picker. Noon for the reason above — any other
+    /// hour lands on the neighbouring day somewhere on Earth.
+    ///
+    /// `nil` only if the instant cannot be built, which a Gregorian calendar and a validated
+    /// date do not allow.
+    public var noonUTC: Date? {
         var components = DateComponents()
         components.year = year
         components.month = month
@@ -20,8 +31,7 @@ extension CalendarDate {
 
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .gmt
-        guard let instant = calendar.date(from: components) else { return description }
-        return instant.formatted(style)
+        return calendar.date(from: components)
     }
 
     /// "16 January 2026" in English, "16 de enero de 2026" in Spanish.
