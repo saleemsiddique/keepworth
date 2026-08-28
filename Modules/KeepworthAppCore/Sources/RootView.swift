@@ -1,3 +1,4 @@
+import FeatureSettings
 import FeatureSummary
 import FeatureSupport
 import FeatureTransactions
@@ -75,6 +76,7 @@ private struct LedgerTabs: View {
     let dependencies: Dependencies
 
     @State private var selection: Destination = .summary
+    @State private var isShowingSettings = false
 
     enum Destination: Hashable {
         case summary
@@ -97,6 +99,28 @@ private struct LedgerTabs: View {
                         deletion: MovementDeletion(entries: dependencies.entries),
                         formatter: dependencies.formatter
                     )
+                    // Mounted here and not inside `SummaryView`: a feature never imports
+                    // another feature, so the summary cannot know `FeatureSettings` exists.
+                    // The composition root is the only place that knows both.
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                isShowingSettings = true
+                            } label: {
+                                Image(systemName: "gearshape")
+                                    .fontWeight(.light)
+                                    .foregroundStyle(.ink)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(
+                                Text("settings.open", bundle: .module)
+                            )
+                        }
+                        // The toolbar item, not the button, is what draws the glass capsule
+                        // iOS puts behind a bar control. This design system has no cards and
+                        // no shadows, and a toolbar is not an exception to that.
+                        .sharedBackgroundVisibility(.hidden)
+                    }
                 }
             case .transactions:
                 NavigationStack {
@@ -131,5 +155,27 @@ private struct LedgerTabs: View {
             )
         }
         .background(.bg)
+        .sheet(isPresented: $isShowingSettings) {
+            settings
+        }
+    }
+
+    /// Built when the sheet opens rather than held alongside the tabs, so its observation of
+    /// the ledger lasts exactly as long as the screen does.
+    private var settings: some View {
+        SettingsView(
+            model: SettingsModel(
+                institutions: dependencies.institutions,
+                accounts: dependencies.accounts,
+                settings: dependencies.settings,
+                changes: dependencies.changes
+            ),
+            dependencies: SettingsDependencies(
+                institutions: dependencies.institutions,
+                accounts: dependencies.accounts,
+                entries: dependencies.entries,
+                formatter: dependencies.formatter
+            )
+        )
     }
 }

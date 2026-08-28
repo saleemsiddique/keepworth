@@ -125,6 +125,15 @@ let features: [Target] =
         ],
         resourceGlobs: ["Resources/**"]
     )
+    + module(
+        name: "FeatureSettings",
+        path: "Modules/Features/FeatureSettings",
+        dependencies: [
+            .target(name: "KeepworthDomain"),
+            .target(name: "KeepworthDesignSystem"),
+        ],
+        resourceGlobs: ["Resources/**"]
+    )
 
 // Composition root: the only module allowed to know concrete implementations.
 let appCore: [Target] = module(
@@ -137,6 +146,7 @@ let appCore: [Target] = module(
         .target(name: "KeepworthDesignSystem"),
         .target(name: "FeatureSummary"),
         .target(name: "FeatureTransactions"),
+        .target(name: "FeatureSettings"),
     ],
     resourceGlobs: ["Resources/**"]
 )

@@ -1,42 +1,330 @@
 {
   "sourceLanguage": "en",
-  "version": "1.0",
   "strings": {
-    "root.failed": {
+    "settings.account": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keepworth could not open your ledger."
+            "value": "Account"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keepworth no ha podido abrir tu libro."
+            "value": "Cuenta"
           }
         }
       }
     },
-    "root.loading": {
+    "settings.accounts": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Opening your ledger…"
+            "value": "Accounts"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Abriendo tu libro…"
+            "value": "Cuentas"
           }
         }
       }
     },
-    "root.retry": {
+    "settings.actionFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That could not be done"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido hacer"
+          }
+        }
+      }
+    },
+    "settings.alreadyHeld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What it already held"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que ya tenía"
+          }
+        }
+      }
+    },
+    "settings.archive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivar"
+          }
+        }
+      }
+    },
+    "settings.archived": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivado"
+          }
+        }
+      }
+    },
+    "settings.bank": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banco"
+          }
+        }
+      }
+    },
+    "settings.bankNamePrompt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BBVA, Trade Republic"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BBVA, Trade Republic"
+          }
+        }
+      }
+    },
+    "settings.banks": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banks"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bancos"
+          }
+        }
+      }
+    },
+    "settings.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your accounts could not be loaded."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se han podido cargar tus cuentas."
+          }
+        }
+      }
+    },
+    "settings.kind.asset": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuenta"
+          }
+        }
+      }
+    },
+    "settings.kind.liability": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card or loan"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarjeta o préstamo"
+          }
+        }
+      }
+    },
+    "settings.name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre"
+          }
+        }
+      }
+    },
+    "settings.namePrompt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payroll, Savings, Cash"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nómina, Ahorro, Efectivo"
+          }
+        }
+      }
+    },
+    "settings.newAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New account"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva cuenta"
+          }
+        }
+      }
+    },
+    "settings.newBank": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New bank"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo banco"
+          }
+        }
+      }
+    },
+    "settings.noAccounts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No accounts yet. Add the first one."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin cuentas. Añade la primera."
+          }
+        }
+      }
+    },
+    "settings.noBank": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No bank"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin banco"
+          }
+        }
+      }
+    },
+    "settings.ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceptar"
+          }
+        }
+      }
+    },
+    "settings.retry": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -53,30 +341,47 @@
         }
       }
     },
-    "seed.account.cash": {
+    "settings.save": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cash"
+            "value": "Save"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Efectivo"
+            "value": "Guardar"
           }
         }
       }
     },
-    "seed.account.openingBalance": {
+    "settings.saveFailed": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Opening balance"
+            "value": "That could not be saved"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido guardar"
+          }
+        }
+      }
+    },
+    "settings.startingBalance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting balance"
           }
         },
         "es": {
@@ -87,211 +392,24 @@
         }
       }
     },
-    "seed.expense.groceries": {
+    "settings.systemAccount": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Groceries"
+            "value": "“Opening balance” is what every starting balance is booked against, so it cannot be renamed or archived."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supermercado"
+            "value": "«Saldo inicial» es contra lo que cuadra todo saldo de partida, así que no se renombra ni se archiva."
           }
         }
       }
     },
-    "seed.expense.health": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Health"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salud"
-          }
-        }
-      }
-    },
-    "seed.expense.housing": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Housing"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vivienda"
-          }
-        }
-      }
-    },
-    "seed.expense.leisure": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leisure"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ocio"
-          }
-        }
-      }
-    },
-    "seed.expense.restaurants": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restaurants"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restaurantes"
-          }
-        }
-      }
-    },
-    "seed.expense.shopping": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shopping"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compras"
-          }
-        }
-      }
-    },
-    "seed.expense.subscriptions": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subscriptions"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suscripciones"
-          }
-        }
-      }
-    },
-    "seed.expense.transport": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transport"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transporte"
-          }
-        }
-      }
-    },
-    "seed.expense.utilities": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utilities"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suministros"
-          }
-        }
-      }
-    },
-    "seed.income.interest": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Interest"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Intereses"
-          }
-        }
-      }
-    },
-    "seed.income.other": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Other income"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otros ingresos"
-          }
-        }
-      }
-    },
-    "seed.income.salary": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salary"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nómina"
-          }
-        }
-      }
-    },
-    "settings.open": {
+    "settings.title": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -308,56 +426,23 @@
         }
       }
     },
-    "tab.add": {
+    "settings.unarchive": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add movement"
+            "value": "Unarchive"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Añadir movimiento"
-          }
-        }
-      }
-    },
-    "tab.summary": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Summary"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resumen"
-          }
-        }
-      }
-    },
-    "tab.transactions": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transactions"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Movimientos"
+            "value": "Desarchivar"
           }
         }
       }
     }
-  }
+  },
+  "version": "1.0"
 }
