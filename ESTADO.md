@@ -164,7 +164,7 @@ Lo razonable desde Windows es limitarse a documentación, diseño y decisiones, 
 
 Resuelto todo salvo lo que se indica:
 
-1. **Bundle ID fijado**: `com.saleemsiddique.keepworth`, con `group.com.saleemsiddique.keepworth` y `iCloud.com.saleemsiddique.keepworth`. **Pendiente y a cargo del usuario**: registrar los tres identificadores en el portal de Apple Developer. No bloquea el simulador; sí hace falta para dispositivo físico y para activar CloudKit en la Fase 9.
+1. **Bundle ID fijado**: `com.ahorrando-con-20.keepworth`, con `group.com.ahorrando-con-20.keepworth` y `iCloud.com.ahorrando-con-20.keepworth`. Los tres están **registrados** en el portal de Apple Developer, y el Team ID vive en `Project.swift`. El prefijo se cambió el 2026-08-28, al preparar la primera subida a TestFlight: la ficha de App Store Connect se había creado bajo `com.ahorrando-con-20` y mover la ficha era más caro que mover el proyecto.
 
 2. **El comando de test documentado no ejecutaba ni un test.** Tuist autogenera un esquema por target, y el del target `Keepworth` es el de la app: su `<Testables>` está vacío porque los cinco targets de test dependen de los frameworks, no de la app. El esquema correcto es **`Keepworth-Workspace`**. Estaba mal en `CLAUDE.md`, en este archivo y en el CI.
 
@@ -891,8 +891,8 @@ Criterios de aceptación por fase:
 
 No bloquean nada, pero hay que resolverlos cuando toque:
 
-- **Registro de identificadores en Apple Developer**: el bundle ID ya está fijado (`com.saleemsiddique.keepworth`), pero el App Group y el contenedor de CloudKit hay que darlos de alta en el portal. Necesario para dispositivo físico y para la Fase 9; el simulador no lo pide.
-- **Team ID**: no hay `DEVELOPMENT_TEAM` en `Project.swift`. En simulador la firma ad-hoc basta; al instalar en un iPhone habrá que añadirlo.
+- ~~**Registro de identificadores en Apple Developer**~~ — hecho el 2026-08-28. Los tres van bajo `com.ahorrando-con-20`.
+- ~~**Team ID**~~ — puesto el 2026-08-28 en `baseSettings`, junto con `CODE_SIGN_STYLE: Automatic`. Va ahí y no en el panel de firma de Xcode: el `.xcodeproj` es generado, así que lo que se toque en la interfaz desaparece en el siguiente `tuist generate`.
 - **Divisa base del usuario**: se elige en el primer arranque y se guarda en `app_setting`. La UI multi-divisa llega después de la v1.
 - **Fuente de tipos de cambio**: hasta que exista el backend, introducción manual.
 - **Backend futuro**: solo datos no personales. Cuando llegue el momento, es una conversación nueva.

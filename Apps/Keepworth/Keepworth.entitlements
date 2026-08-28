@@ -7,13 +7,13 @@
 	     KeepworthPersistence setup too. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.saleemsiddique.keepworth</string>
+		<string>group.com.ahorrando-con-20.keepworth</string>
 	</array>
 
 	<!-- Sync with the user's own private iCloud (phase 9). There is no server. -->
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
-		<string>iCloud.com.saleemsiddique.keepworth</string>
+		<string>iCloud.com.ahorrando-con-20.keepworth</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>

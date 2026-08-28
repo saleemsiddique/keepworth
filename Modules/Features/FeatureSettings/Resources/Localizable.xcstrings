@@ -307,6 +307,23 @@
         }
       }
     },
+    "settings.noBanks": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No banks yet. Cash needs none."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin bancos. El efectivo no necesita ninguno."
+          }
+        }
+      }
+    },
     "settings.ok": {
       "extractionState": "manual",
       "localizations": {

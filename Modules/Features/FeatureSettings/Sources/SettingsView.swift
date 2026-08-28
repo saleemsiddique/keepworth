@@ -86,13 +86,22 @@ public struct SettingsView: View {
             .padding(Spacing.screenMargin)
         }
         .safeAreaInset(edge: .bottom) {
-            // The one primary action of the screen. Adding a bank is a row inside its own
-            // section rather than a second button competing with this one.
-            PrimaryAction(String(localized: "settings.newAccount", bundle: .module)) {
-                route = .newAccount
+            // Two actions of equal weight, one at each edge. They are the two things this
+            // screen is for and neither leads to the other, so giving one the bottom bar and
+            // burying the other in a row made them look like different kinds of thing.
+            HStack(spacing: Spacing.row) {
+                PrimaryAction(String(localized: "settings.newAccount", bundle: .module)) {
+                    route = .newAccount
+                }
+
+                Spacer(minLength: Spacing.row)
+
+                PrimaryAction(String(localized: "settings.newBank", bundle: .module)) {
+                    route = .newBank
+                }
             }
             .padding(Spacing.screenMargin)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .background(.surface)
         }
     }
@@ -127,6 +136,10 @@ public struct SettingsView: View {
         VStack(alignment: .leading, spacing: 0) {
             SectionCaption(String(localized: "settings.banks", bundle: .module))
 
+            if snapshot.banks.isEmpty {
+                EmptyStateLine(String(localized: "settings.noBanks", bundle: .module))
+            }
+
             ForEach(snapshot.banks) { banked in
                 FormRow(title: banked.bank.name) { route = .bank(banked.bank) }
                     .contextMenu {
@@ -134,11 +147,9 @@ public struct SettingsView: View {
                             Task { await model.archive(banked.bank) }
                         }
                     }
-                Hairline()
-            }
-
-            FormRow(title: String(localized: "settings.newBank", bundle: .module)) {
-                route = .newBank
+                if banked.id != snapshot.banks.last?.id {
+                    Hairline()
+                }
             }
         }
     }

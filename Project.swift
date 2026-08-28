@@ -1,11 +1,12 @@
 import ProjectDescription
 
-// The Team ID is resolved when signing for a physical device; the simulator does not need it.
+// Signing a build for a physical device needs the Team ID; the simulator does not.
 // Changing `bundleIdPrefix` means changing the App Group and the CloudKit container too, and
 // registering all three again in the Apple Developer portal.
-let bundleIdPrefix = "com.saleemsiddique.keepworth"
-let appGroup = "group.com.saleemsiddique.keepworth"
-let iCloudContainer = "iCloud.com.saleemsiddique.keepworth"
+let developmentTeam = "VXR3LZ3MVU"
+let bundleIdPrefix = "com.ahorrando-con-20.keepworth"
+let appGroup = "group.com.ahorrando-con-20.keepworth"
+let iCloudContainer = "iCloud.com.ahorrando-con-20.keepworth"
 
 let deploymentTargets: DeploymentTargets = .iOS("26.0")
 let destinations: Destinations = [.iPhone, .iPad]
@@ -16,6 +17,10 @@ let baseSettings: SettingsDictionary = [
     "SWIFT_VERSION": "6.0",
     "SWIFT_TREAT_WARNINGS_AS_ERRORS": "YES",
     "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
+    // Here and not in Xcode's signing pane: the `.xcodeproj` is generated, so anything set
+    // there is gone the next time anyone runs `tuist generate`.
+    "DEVELOPMENT_TEAM": "\(developmentTeam)",
+    "CODE_SIGN_STYLE": "Automatic",
 ]
 
 /// Declares a module as a framework with its own test target.
@@ -170,6 +175,10 @@ let app: Target = .target(
     deploymentTargets: deploymentTargets,
     infoPlist: .extendingDefault(with: [
         "CFBundleDisplayName": "Keepworth",
+        // Explicit so a TestFlight upload is repeatable: App Store Connect refuses a build
+        // number it has already seen, and the default of "1" can only be sent once.
+        "CFBundleShortVersionString": "0.5.0",
+        "CFBundleVersion": "1",
         "UILaunchScreen": [:],
         // Read by `KeepworthAppCore` instead of being hardcoded there: the identifier already
         // has to match the entitlements file, and a third copy is a third place to drift.
@@ -179,6 +188,9 @@ let app: Target = .target(
         "ITSAppUsesNonExemptEncryption": false,
     ]),
     sources: ["Apps/Keepworth/Sources/**"],
+    // The app icon, and so far nothing else. An app without one builds and runs, and is
+    // rejected on upload: TestFlight requires `CFBundleIconName` and a 1024 pt icon.
+    resources: ["Apps/Keepworth/Resources/**"],
     entitlements: "Apps/Keepworth/Keepworth.entitlements",
     dependencies: [
         .target(name: "KeepworthAppCore")
