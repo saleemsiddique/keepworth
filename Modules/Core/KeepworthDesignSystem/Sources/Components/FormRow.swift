@@ -7,12 +7,15 @@ import SwiftUI
 /// edge as the ledger does. `inkSoft` and not `ink`, because the label is the fixed part and
 /// the value is what the user came to change — and a placeholder for a value not chosen yet
 /// has to look unchosen.
+///
+/// It defaults to empty because some rows only open something and have nothing to report on
+/// the way in: a list of banks, or the row that adds one.
 public struct FormRow: View {
     private let title: String
     private let value: String
     private let action: () -> Void
 
-    public init(title: String, value: String, action: @escaping () -> Void) {
+    public init(title: String, value: String = "", action: @escaping () -> Void) {
         self.title = title
         self.value = value
         self.action = action

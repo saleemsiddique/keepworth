@@ -85,6 +85,7 @@ Modules/Core/KeepworthPersistence/           CLAUDE.md + la capa completa (Fase 
 Modules/Features/FeatureSupport/             lo que dos pantallas dibujan igual
 Modules/Features/FeatureSummary/             Resumen y el informe del periodo (Fase 4)
 Modules/Features/FeatureTransactions/        la lista de movimientos (Fase 4)
+Modules/Features/FeatureSettings/            cuentas y bancos (Fase 5)
 Modules/Core/KeepworthSync/                  CLAUDE.md + placeholder + test
 Modules/Core/KeepworthDesignSystem/          CLAUDE.md + la capa completa (Fase 3)
 Modules/KeepworthAppCore/                    CLAUDE.md + RootView + test

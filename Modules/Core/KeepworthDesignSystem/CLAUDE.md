@@ -92,7 +92,7 @@ Y los de entrada, que llegaron con la Fase 5 — hasta entonces los siete de arr
 |---|---|
 | `DigitAmount` | `init(minorUnits: Int64 = 0)`, con `append(_:)` y `deleteLast()` |
 | `AmountKeypad` | `init(onDigit: @escaping (Int) -> Void, onDelete: @escaping () -> Void)` |
-| `FormRow` | `init(title: String, value: String, action: @escaping () -> Void)` |
+| `FormRow` | `init(title: String, value: String = "", action: @escaping () -> Void)` |
 | `TextEntryRow` | `init(title: String, prompt: String, text: Binding<String>)` |
 | `ChoiceBar` | `init(selection: Binding<Tag>, items: [ChoiceItem<Tag>])` |
 | `SelectionRow` | `init(tag: Tag, selection: Tag?, title: String, subtitle: String? = nil, symbolName: String? = nil, action: @escaping () -> Void)` |

@@ -215,7 +215,7 @@ Aún no existe, y su target se declarará en `Project.swift` cuando toque:
 Apps/KeepworthWidgets/     widget extension (Fase 7)
 ```
 
-Cada módulo tiene `Sources/` y `Tests/`. Los que llevan además `Resources/` lo declaran con `resourceGlobs:` en `Project.swift`, que por defecto está vacío porque un glob que no casa con nada hace fallar la generación: `KeepworthDesignSystem` para el catálogo de tokens, y `KeepworthAppCore`, `FeatureSummary` y `FeatureTransactions` para sus String Catalogs.
+Cada módulo tiene `Sources/` y `Tests/`. Los que llevan además `Resources/` lo declaran con `resourceGlobs:` en `Project.swift`, que por defecto está vacío porque un glob que no casa con nada hace fallar la generación: `KeepworthDesignSystem` para el catálogo de tokens, y `KeepworthAppCore`, `FeatureSummary`, `FeatureTransactions` y `FeatureSettings` para sus String Catalogs.
 
 **Todo texto se busca con `bundle: .module`.** Dentro de un framework, `String(localized:)` y `Text(_:)` miran en el bundle principal, así que sin él las cadenas se pintan como su propia clave **sin dar ningún error**.
 
