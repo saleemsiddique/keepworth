@@ -92,8 +92,8 @@ Contrasta con la tabla de `CLAUDE.md`. Un `import GRDB`, `import KeepworthPersis
 ### 6. Actualizar la documentación
 
 - El árbol de `ESTADO.md` §2, que lista qué existe y qué no.
-- El `CLAUDE.md` raíz § «Estructura» si el módulo estrena una categoría — por ejemplo, el primer `Modules/Features/`.
-- Un `CLAUDE.md` propio si es un módulo Core, con el contrato de la capa.
+- El `CLAUDE.md` raíz § «Estructura» si el módulo estrena una categoría.
+- **Un `CLAUDE.md` propio si el módulo estrena capa**, con el contrato: qué importa, qué expone y sus reglas. Una feature más no lo necesita — `Modules/Features/CLAUDE.md` ya cubre a todas.
 
 ## Trampas conocidas
 

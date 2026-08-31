@@ -31,20 +31,17 @@ Implementa los protocolos de repositorio de `KeepworthDomain` sobre SQLite con G
 
 ## Observación
 
-`SQLiteLedgerChanges` implementa el protocolo `LedgerChanges` de `Domain` con un `DatabaseRegionObservation` sobre **la base entera**, no sobre una lista de tablas. La señal no lleva detalle, así que estrechar la región no compraría nada y añadiría una forma de equivocarse: olvidar una tabla es una pantalla que deja de actualizarse sin síntoma.
+`SQLiteLedgerChanges` implementa `LedgerChanges` de `Domain` con un `DatabaseRegionObservation` sobre **la base entera**, no sobre una lista de tablas: la señal no lleva detalle, así que estrechar la región solo añadiría una forma de equivocarse. El porqué, y por qué se descartó `ValueObservation`, están en `ESTADO.md` §6 bis.
 
-Se valoró observar cada consulta con `ValueObservation` —lo que este documento prometía antes— y se descartó en la Fase 4: obligaba a una variante observada de cada consulta y a que el doble en memoria emitiera con la misma semántica en todas ellas, para ahorrar unas lecturas pequeñas contra SQLite local.
+**Una sola observación para toda la app, repartida entre todos los oyentes.** `DatabaseRegionObservation.start` **bloquea el hilo que lo llama** hasta conseguir acceso de escritura. `SQLiteLedgerChanges` arranca en su `init` y `changes()` solo añade un oyente.
+
+Tres reglas que hay que respetar al usarlo:
+
+- **Se construye una vez, en `KeepworthAppCore`, y fuera del actor principal.** Es la llamada que puede esperar al escritor; en el hilo principal congela el primer fotograma.
+- **El stream mantiene viva la observación**, con una captura fuerte deliberada. Sin ella, `SQLiteLedgerChanges(...).changes()` sobre un valor que nadie más retiene devuelve un stream que no dispara nunca: el `deinit` cancela al salir. Costó tres tests en rojo, y en producción habría sido una pantalla que deja de refrescarse sin ningún síntoma.
+- Los streams llevan `bufferingPolicy: .bufferingNewest(1)`: dos señales dicen lo mismo que una, así que importar veinte movimientos con la pantalla suspendida cuesta una recarga al volver, no veinte.
 
 El `Database` que entrega `onChange` se descarta a propósito: leerlo ahí correría en la cola del escritor y convertiría un aviso en una consulta.
-
-**Una sola observación para toda la app, repartida entre todos los oyentes.** `DatabaseRegionObservation.start` **bloquea el hilo que lo llama** hasta conseguir acceso de escritura, así que arrancar una por pantalla congelaría el hilo principal mientras hubiera una importación en curso. `SQLiteLedgerChanges` arranca en su `init` y `changes()` solo añade un oyente.
-
-Dos consecuencias que hay que respetar al usarlo:
-
-- **Se construye una vez, en `KeepworthAppCore`, y fuera del actor principal.** Es la llamada que puede esperar al escritor.
-- **El stream mantiene viva la observación**, con una captura fuerte deliberada. Sin ella, `SQLiteLedgerChanges(...).changes()` sobre un valor que nadie más retiene devuelve un stream que no dispara nunca, porque el `deinit` cancela al salir. Costó tres tests en rojo descubrirlo, y en producción habría sido una pantalla que deja de refrescarse sin ningún síntoma.
-
-Los streams llevan `bufferingPolicy: .bufferingNewest(1)`: dos señales dicen lo mismo que una, así que importar veinte movimientos con la pantalla suspendida cuesta una recarga al volver, no veinte.
 
 ## Records
 

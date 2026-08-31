@@ -32,23 +32,18 @@ Los nombres de las cuentas sembradas salen del String Catalog. La lista está en
 
 ## Textos
 
-`Resources/Localizable.xcstrings`, en inglés y español desde la primera cadena.
-
-**Siempre con `bundle: .module`.** En un framework, `String(localized:)` y `Text(_:)` buscan en el bundle principal, así que sin él las cadenas salen como su clave —`seed.expense.groceries` en pantalla— sin dar ningún error. Hay un test que lo caza.
+`Resources/Localizable.xcstrings`, en inglés y español desde la primera cadena, con `bundle: .module` — `CLAUDE.md` § «Textos». Aquí hay un test que caza su ausencia: sin él, los nombres de las cuentas sembradas saldrían como `seed.expense.groceries` en pantalla.
 
 ## Navegación
 
-Dos destinos en la barra inferior con el botón de añadir en el centro exacto, y Ajustes como icono en la toolbar superior:
+Dos destinos en la barra inferior con el ⊕ en el centro exacto, y Ajustes en la toolbar de Resumen:
 
 ```
 │ Resumen  ⊕  Movimientos │
 ```
 
-- **Resumen** — patrimonio neto, cuentas agrupadas por banco, lo gastado y ahorrado del mes, movimientos recientes.
-- **⊕** — abre el editor de movimiento como sheet. Único elemento con color de acento en la barra. Vivo desde la Fase 5.
-- **Movimientos** — lista completa. Buscar y filtrar siguen sin existir.
-- **Editor de movimiento** — sheet, desde el ⊕ para uno nuevo y desde el tap sobre una fila para corregirlo. Se monta aquí y no en las pantallas que lo abren: una feature nunca importa otra feature, así que Resumen y Movimientos reciben un `onSelect` y no saben que el editor existe. **Un saldo de partida no se abre**: su contrapartida es la cuenta interna de patrimonio, que no sale en ningún selector.
-- **⚙ Ajustes** — en la toolbar de Resumen, no en la barra inferior. Sheet modal con su propio `NavigationStack`: configurar la app no es un detalle del dinero, y así la pila de Resumen sigue siendo el único sitio donde vive el informe. Desde la Fase 5 gestiona **cuentas y bancos**: crear, renombrar y archivar, con el saldo de partida al abrir una cuenta. Categorías, import/export, apariencia, privacidad e iCloud siguen sin existir.
-- **Informe** — pantalla de detalle empujada desde Resumen. Hoy enseña el periodo en curso; las flechas entre meses y el selector de rango libre están pendientes.
+El mapa completo de pantallas —qué enseña cada una y qué falta— está en `ESTADO.md` §8. Aquí solo las reglas que atan la navegación a este módulo:
 
-**Regla de crecimiento**: presupuestos y metas serán secciones del scroll de Resumen; el informe es una pantalla de detalle empujada desde Resumen; buscar y filtrar vive en Movimientos, y las programadas son un filtro suyo. **Nunca se añade una tercera tab.** Si una funcionalidad nueva no encuentra sitio bajo esta regla, se discute con el usuario antes de tocar la navegación.
+- **Todo lo que cruza features se monta aquí.** El ⚙ de Ajustes, el editor de movimiento desde el ⊕ y desde el tap en una fila: Resumen y Movimientos reciben un `onSelect` y no saben que el editor existe. `LedgerTabs` pone la toolbar y presenta las sheets.
+- **Un saldo de partida no se abre en el editor**: su contrapartida es la cuenta interna de patrimonio, que no sale en ningún selector.
+- **Nunca se añade una tercera tab.** Presupuestos y metas serán secciones del scroll de Resumen; el informe es detalle empujado desde Resumen; buscar, filtrar y las programadas viven en Movimientos. Si algo nuevo no encuentra sitio bajo esta regla, se discute con el usuario antes de tocar la navegación.

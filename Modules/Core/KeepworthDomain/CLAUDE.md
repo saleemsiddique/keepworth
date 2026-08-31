@@ -8,31 +8,9 @@ El corazón contable de la app. Define **qué es** una cuenta, un asiento y el d
 
 Si escribiendo aquí necesitas importar algo, la lógica no pertenece a esta capa.
 
-**Expone**:
-- Entidades: `Money`, `CurrencyCode`, `Institution`, `Account`, `AccountKind`, `Entry`, `EntryLine`.
-- Tipos de apoyo: `CalendarDate` —fecha sin hora ni zona, la de `occurredOn`— e `Identifier<T>`, que da `AccountID`, `EntryID`, `InstitutionID` y `EntryLineID`.
-- Protocolos de repositorio: `InstitutionRepository`, `AccountRepository`, `EntryRepository`, `SettingsRepository`. Definidos aquí, implementados en `KeepworthPersistence`.
-- `LedgerChanges`, que avisa de que el libro se movió sin decir qué. Es lo que permite que una pantalla se refresque sola sin que cada camino de escritura tenga que acordarse de a quién avisar.
-- `MoneyFormatter`, la única forma de convertir `Money` en texto.
-- Dos formas de preguntar por movimientos, y no son intercambiables: `EntryLineQuery` pregunta **cuánto suman** unas cuentas y responde con patas sueltas; `EntryQuery` pregunta **qué pasó** y responde con asientos enteros.
-- Casos de uso: `RecordExpense`, `RecordIncome`, `TransferBetweenAccounts`, `SetOpeningBalance`, `DeleteMovement`, `CreateAccount`, `UpdateAccount`, `ArchiveAccount`, `CalculateNetWorth`, `CalculateAccountBalance`, `CalculateInstitutionTotal`, `SummarizePeriod`, `SeedFirstLaunch`.
-- Errores de dominio descriptivos, nunca `nil` para señalar fallo.
+**Expone** entidades, `Identifier<T>`, `CalendarDate`, los cuatro protocolos de repositorio, `LedgerChanges`, `MoneyFormatter`, los casos de uso y errores de dominio descriptivos — nunca `nil` para señalar fallo. La lista viva está en `Sources/`.
 
-**`Decimal` solo aparece en `MoneyFormatter`, y solo en el último paso hacia el texto.** La aritmética sigue siendo `Int64`, que es lo que permite que un asiento sume exactamente cero. Formatear es el único sitio donde una representación decimal no solo es segura sino obligatoria, porque `NumberFormatter` habla decimales. Un `Decimal` en cualquier otro archivo del dominio es un bug.
-
-`MoneyFormatter` vive aquí y no en una capa de presentación porque el design system no puede ver `Money`, y cada feature acabaría con su copia. Cuántos decimales tiene una divisa es un hecho de la divisa, no de la pantalla.
-
-**`LedgerChanges` no dice qué cambió, y es deliberado.** Una pantalla ya sabe cargar lo que enseña; lo que no puede saber es *cuándo* repetirlo. Una señal por consulta refrescaría menos, pero obligaría a una variante observada de cada consulta y a un doble fiel de cada una, para evitar un coste que nadie nota. Devuelve `AsyncThrowingStream` en vez de terminar en silencio: una secuencia que se acaba sola deja una pantalla enseñando cifras que ya no se actualizarán, sin nada que lo diga.
-
-**No existe un `Entry` parcial.** `Entry.init` valida que las líneas sumen cero, así que leer un asiento es leerlo entero. De ahí sale la regla menos obvia de `EntryQuery`: filtrar por cuenta elige **qué asientos**, nunca qué líneas. Un gasto tiene una pata en la cuenta y otra en la categoría, y devolver solo la que casa con el filtro produce un asiento que no cuadra y que el init rechaza.
-
-`EntryQuery.limit` es **obligatorio**, por lo mismo que `EntryLineQuery.accountIDs` no admite «todas»: una consulta sin techo sobre un historial largo es la que no queremos que nadie escriba por descuido. Un límite de cero o negativo lanza, y no por purismo — SQLite interpreta un `LIMIT` negativo como «sin límite», así que dejarlo pasar convertiría la defensa en su contrario.
-
-**Borrar un movimiento no tiene regla; borrar una cuenta sí.** Un asiento se borra entero o no se borra: `DeleteMovement` es fino a propósito y existe para que las pantallas pasen por un caso de uso como en todo lo demás. La regla «sin movimientos se borra, con movimientos se archiva» es de las cuentas, y llega con la pantalla que la pide.
-
-**El undo recibe el `Entry`, no su id.** Quien borró lo tiene en la mano, y eso dice exactamente qué líneas revivir. Deducirlas del instante del entierro parecía más limpio y estaba mal: un asiento editado y luego borrado arrastra dos entierros que pueden compartir marca de tiempo, y el undo devolvía un movimiento de cuatro patas que no cuadra.
-
-`Entry.twoLine` es **interno a propósito**: construir un movimiento pasa siempre por un caso de uso, que es quien valida los tipos de cuenta. Si una pantalla necesita un movimiento que hoy no existe, se añade un caso de uso, no se abre el constructor.
+**`Decimal` solo aparece en `MoneyFormatter`, y solo en el último paso hacia el texto.** La aritmética sigue siendo `Int64`, que es lo que permite que un asiento sume exactamente cero. Un `Decimal` en cualquier otro archivo del dominio es un bug.
 
 ## Invariantes
 
@@ -45,6 +23,15 @@ Estas reglas son la razón de existir del módulo. Cada una tiene tests que la d
 5. **Las categorías son cuentas** de tipo `.expense` o `.income`. No existe un tipo `Category`.
 6. **El patrimonio neto solo mira `.asset` y `.liability`.** Una categoría que sume al patrimonio es el bug más grave posible aquí: le dice al usuario que tiene dinero que no tiene.
 7. **Una cuenta `.expense`, `.income` o `.equity` nunca pertenece a una `Institution`.** Un banco agrupa cuentas donde hay dinero; una categoría no es un sitio donde haya dinero.
+
+## Reglas de uso
+
+- **No existe un `Entry` parcial.** `Entry.init` valida que las líneas sumen cero, así que leer un asiento es leerlo entero. De ahí la regla menos obvia de `EntryQuery`: filtrar por cuenta elige **qué asientos**, nunca qué líneas.
+- **`EntryQuery.limit` es obligatorio**, igual que `EntryLineQuery.accountIDs` no admite «todas». Un límite de cero o negativo lanza: SQLite interpreta un `LIMIT` negativo como «sin límite», así que dejarlo pasar convertiría la defensa en su contrario.
+- **`Entry.twoLine` es interno a propósito.** Construir un movimiento pasa siempre por un caso de uso, que es quien valida los tipos de cuenta. Si una pantalla necesita un movimiento que hoy no existe, se añade un caso de uso, no se abre el constructor.
+- **El undo recibe el `Entry`, no su id.** Es lo que dice exactamente qué líneas revivir.
+
+El porqué de cada una está en `ESTADO.md` §6 bis.
 
 ## Cómo se registra un gasto
 

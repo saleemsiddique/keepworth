@@ -4,7 +4,7 @@ App iOS de finanzas personales. **Local-only**: ningún dato de usuario sale del
 
 iOS 26+ · iPhone y iPad · SwiftUI · GRDB · Tuist
 
-> **Si es tu primera sesión en este proyecto, lee `ESTADO.md` antes de tocar nada.** Contiene el plan completo, las decisiones tomadas y por qué, en qué fase estamos y qué hay pendiente de verificar. Este archivo impone las reglas; `ESTADO.md` explica el contexto.
+Este archivo impone las reglas que valen en cualquier archivo del repositorio. Las de una capa concreta viven en el `CLAUDE.md` de su módulo, que se carga solo al trabajar allí. `ESTADO.md` no se lee entero: se consulta por secciones —§3 entorno y trampas de verificación, §6 modelo de datos, §6 bis decisiones del dominio, §7 design system, §8 navegación, §9 fases, §11 puntos abiertos—.
 
 ---
 
@@ -60,28 +60,25 @@ Las categorías no son una tabla aparte: son `Account` de tipo `.expense` o `.in
 
 Los bancos sí son entidad propia (`Institution`): agrupan cuentas y dan un total por entidad, pero no guardan dinero ni reciben movimientos. Una cuenta `.expense`, `.income` o `.equity` **nunca** pertenece a un banco.
 
+Los siete invariantes con sus tests están en `Modules/Core/KeepworthDomain/CLAUDE.md`.
+
 ### Persistencia
 
-- Los identificadores son UUID. **Nunca autoincrementales**: romperían el sync con CloudKit.
-- Toda tabla lleva `created_at`, `updated_at` y `deleted_at`.
-- **Nada se borra físicamente.** Borrar es marcar `deleted_at`; las consultas filtran filas vivas.
-- **Borrar un asiento entierra el asiento y todas sus líneas.** Solo el asiento se vería bien en pantalla, porque las lecturas ya ignoran una línea cuyo asiento está enterrado — pero una línea sin lápida propia es una línea que el sync no tiene motivo para quitar en ningún otro sitio, y vuelve.
-- Una línea solo cuenta si **ni ella ni su asiento** están borrados. Las consultas van contra la vista `live_entry_line`, nunca contra `entry_line` directamente: filtrar solo por la línea es el error silencioso más probable del esquema.
-- Cada cambio de esquema es una migración nueva y versionada. Nunca se edita una migración ya publicada.
+UUID como clave primaria —nunca autoincremental, rompería el sync—, `created_at`/`updated_at`/`deleted_at` en toda tabla, soft delete siempre, migraciones publicadas inmutables, y las líneas se leen por la vista `live_entry_line` y nunca por `entry_line`.
+
+Las seis reglas de esquema, con su porqué y sus trampas, están en `Modules/Core/KeepworthPersistence/CLAUDE.md`.
 
 ### Diseño
 
-- **Cero colores literales fuera de `KeepworthDesignSystem`.** Solo los siete tokens semánticos: `bg`, `surface`, `ink`, `inkSoft`, `hairline`, `accent`, `expense`.
-- **El color de un importe marca dirección, nunca juicio**: `accent` cuando el dinero **entra**, `expense` cuando **sale o se debe** —un gasto, un saldo negativo, el total gastado de un periodo—, e `ink` en **todo lo demás**, incluidos los saldos positivos y las cifras derivadas como lo ahorrado. El verde aparece además en los elementos interactivos.
-- `expense` está construido para espejar a `accent`, no para alarmar: profundo y desaturado en claro, brillante en oscuro, igual que el verde. Ninguno de los dos grita más que el otro.
-- **Lleva signo todo importe que sea negativo o que tenga dirección**; un saldo positivo no lleva ninguno. El signo se pone aunque el color ya diga lo mismo: la redundancia es deliberada, porque la cifra tiene que leerse igual en escala de grises, con daltonismo o copiada a un sitio sin color.
-- Sin tarjetas ni sombras: la jerarquía se construye con espacio en blanco y hairlines de 0,5 pt.
-- Los importes usan SF Mono con `.monospacedDigit()`.
-- Una acción primaria por pantalla; el resto vive en gestos nativos.
+Siete tokens semánticos y ni un color literal fuera de `KeepworthDesignSystem`. El color de un importe marca **dirección, nunca juicio**: `accent` cuando el dinero entra, `expense` cuando sale o se debe, `ink` en todo lo demás. Lleva signo todo importe negativo o con dirección.
+
+La paleta con sus hex, la regla completa del color y del signo, y el acabado —sin tarjetas ni sombras— están en `Modules/Core/KeepworthDesignSystem/CLAUDE.md`.
 
 ### Textos
 
 Todo texto visible vive en un String Catalog, en inglés y español. Un literal de cadena en una vista es un bug de localización.
+
+**Siempre con `bundle: .module`.** Dentro de un framework, `String(localized:)` y `Text(_:)` miran en el bundle principal, así que sin él las cadenas se pintan como su propia clave **sin dar ningún error**.
 
 ### Idioma del código
 
@@ -110,9 +107,7 @@ Las PR se cierran con **commit de merge** y la rama se conserva. Ni squash, ni `
 
 Una fase larga se parte en varias PR, cada una con la anterior como base. **Se mergean empezando por la de arriba** —la última— y bajando, de modo que la de más abajo acaba conteniendo a todas y una sola PR la lleva a `main`.
 
-Mergearlas en el orden natural, de abajo arriba, **no funciona en este repositorio**: GitHub solo reapunta la base de una PR apilada a `main` cuando se **borra** la rama anterior, y aquí las ramas se conservan. Cada PR se mergea entonces en su base y no en `main`, así que solo llega la primera y el resto se queda en las ramas intermedias sin que nada avise.
-
-Pasó con las cuatro PR de la Fase 4 (#8 a #11) y se resolvió con una PR de integración desde la rama que ya las contenía a todas. Antes de darlas por hechas:
+De abajo arriba **no funciona aquí**: GitHub solo reapunta la base de una PR apilada a `main` cuando se **borra** la rama anterior, y estas se conservan. Cada PR se mergea entonces en su base, así que solo llega la primera y el resto se queda en ramas intermedias sin que nada avise. Pasó con las PR #8 a #11 de la Fase 4. Antes de darlas por hechas:
 
 ```bash
 git fetch origin
@@ -122,15 +117,12 @@ git diff --stat origin/main origin/<rama-de-arriba>   # tiene que salir vacío
 
 ### Cambiar una decisión
 
-Cambiar una regla no es editar el sitio donde la encontraste. Una decisión de este proyecto vive en varios archivos a la vez, y dejar uno atrás no rompe nada — solo hace que la documentación mienta, que es peor que no tenerla.
+Una regla vive en **un solo sitio autoritativo**: este archivo si es transversal, el `CLAUDE.md` de su módulo si es de una capa. Quien la cita, la enlaza en vez de repetirla. Cuando cambie, recorre los cuatro sitios donde deja rastro:
 
-Cuando cambie una regla, recorre los cinco:
-
-1. **`CLAUDE.md`** (este archivo) — el enunciado corto de la regla.
-2. **`ESTADO.md`** — el enunciado largo, con el **porqué** y con qué sustituye. Una regla que cambia sin dejar rastro de por qué cambió se revierte sola en tres meses.
-3. **El `CLAUDE.md` del módulo** afectado.
-4. **`.claude/agents/architecture-reviewer.md`** — el que más se olvida. Si sus reglas se quedan viejas, **denuncia como violación justo lo que se acaba de decidir**. Ya pasó al añadir el token `expense`.
-5. **Las maquetas y ejemplos** de `ESTADO.md` §6 y §8, y las galerías del design system. Son la referencia visual, y siguen enseñando lo viejo aunque el texto de al lado diga otra cosa.
+1. **El `CLAUDE.md` dueño** — el enunciado de la regla.
+2. **`ESTADO.md`** — el porqué y a qué sustituye. Una regla que cambia sin dejar rastro de por qué cambió se revierte sola en tres meses.
+3. **`.claude/agents/architecture-reviewer.md`** — el que más se olvida. Copia las reglas a propósito, para poder auditar sin depender de nada; si se quedan viejas, **denuncia como violación justo lo que se acaba de decidir**. Ya pasó al añadir el token `expense`.
+4. **Las maquetas y ejemplos** de `ESTADO.md` §6 y §8, y las galerías del design system. Son la referencia visual, y siguen enseñando lo viejo aunque el texto de al lado diga otra cosa.
 
 Dos hábitos que salen de haberlo hecho mal:
 
@@ -166,27 +158,17 @@ xcodebuild test \
 xcrun swift-format lint --configuration .swift-format --recursive --strict Modules Apps
 ```
 
-**El esquema es `Keepworth-Workspace`, no `Keepworth`.** Tuist autogenera un esquema por target: el de `Keepworth` es el de la app y su acción de test está vacía, así que ejecuta cero tests sin avisar de ello. `Keepworth-Workspace` es el único que agrupa los ocho targets de test.
-
-El `.xcodeproj` y el `.xcworkspace` son artefactos generados: no se editan a mano ni se versionan. Para añadir un módulo o cambiar dependencias se edita `Project.swift`.
+**El esquema es `Keepworth-Workspace`, no `Keepworth`.** Tuist autogenera un esquema por target: el de `Keepworth` es el de la app y su acción de test está vacía, así que ejecuta cero tests sin avisar de ello. `Keepworth-Workspace` es el único que agrupa los diez targets de test.
 
 **`tuist generate` no es opcional al crear o renombrar archivos.** La lista de archivos queda fijada en el `.xcodeproj`, así que un archivo nuevo no se compila y uno renombrado da `Build input file cannot be found`. El hook solo se dispara al tocar `Project.swift`; en los demás casos lo lanzas tú.
 
-Los diagnósticos de SourceKit en el editor se quedan atrás hasta esa regeneración: `Cannot find 'X' in scope` sobre código recién escrito suele ser eso y no un error real. **Manda `tuist xcodebuild build`**, no el subrayado rojo.
+El `.xcodeproj` y el `.xcworkspace` son artefactos generados: no se editan a mano ni se versionan. Para añadir un módulo o cambiar dependencias se edita `Project.swift`.
 
-`Tuist/Package.resolved` cambia su `originHash` al regenerar sin que se mueva ningún pin. Es ruido: fuera del commit salvo que cambie una versión de verdad.
-
-**Si los tests fallan sin ejecutar ni uno**, con «Failed to load the test bundle … Trying to load an unsigned library» en **todos** los targets a la vez, no es el código: es la DerivedData. Pasa al mezclar un `-derivedDataPath` propio —por ejemplo para instalar la app en el simulador— con la ruta compartida. Se arregla borrándola:
-
-```bash
-rm -rf ~/Library/Developer/Xcode/DerivedData/Keepworth-*
-```
-
-Que fallen **todos** los bundles, incluido alguno que no se ha tocado, es la señal de que el problema es del entorno y no de un test.
+Cuando algo falle de forma rara —SourceKit subrayando código correcto, todos los bundles de test cayendo a la vez—, mira `ESTADO.md` §3 § «Trampas de verificación» antes de tocar Swift: suele ser el entorno.
 
 ### Antes de dar una fase por terminada
 
-Además de build, tests y lint, dos comprobaciones que ninguna herramienta hace sola:
+Además de build, tests y lint, una comprobación que ninguna herramienta hace sola:
 
 ```bash
 # cero colores literales fuera del design system
@@ -194,9 +176,9 @@ grep -rn -E 'Color\(red:|\.foregroundColor|Color\.(gray|black|white|red|blue|gre
   --include='*.swift' Modules Apps | grep -v 'Sources/Tokens/Colors.swift'
 ```
 
-Y pasar el agente `architecture-reviewer` sobre el diff. Encuentra cosas que el compilador no puede: duplicación real, una regla escrita en dos sitios con distinta letra, un test que no prueba lo que dice probar.
-
 Los recuentos de tests se dicen en **casos ejecutados y por módulo**, nunca en atributos `@Test` del repositorio entero: los tests parametrizados hacen que las dos cifras no se parezcan.
+
+Queda además el agente `architecture-reviewer`, que encuentra lo que el compilador no puede. **Se lanza solo si el usuario lo pide.**
 
 ---
 
@@ -207,19 +189,10 @@ Apps/Keepworth/            app target
 Modules/Core/              Domain, Persistence, Sync, DesignSystem
 Modules/Features/          una carpeta por pantalla, más FeatureSupport
 Modules/KeepworthAppCore/  composition root: DI y navegación raíz
+Apps/KeepworthWidgets/     widget extension — no existe aún (Fase 7)
 ```
 
-Aún no existe, y su target se declarará en `Project.swift` cuando toque:
-
-```
-Apps/KeepworthWidgets/     widget extension (Fase 7)
-```
-
-Cada módulo tiene `Sources/` y `Tests/`. Los que llevan además `Resources/` lo declaran con `resourceGlobs:` en `Project.swift`, que por defecto está vacío porque un glob que no casa con nada hace fallar la generación: `KeepworthDesignSystem` para el catálogo de tokens, y `KeepworthAppCore`, `FeatureSummary`, `FeatureTransactions` y `FeatureSettings` para sus String Catalogs.
-
-**Todo texto se busca con `bundle: .module`.** Dentro de un framework, `String(localized:)` y `Text(_:)` miran en el bundle principal, así que sin él las cadenas se pintan como su propia clave **sin dar ningún error**.
-
-Los módulos Core llevan su propio `CLAUDE.md` con el contrato de la capa: léelo antes de tocarlos.
+Cada módulo tiene `Sources/` y `Tests/`, y los que llevan `Resources/` lo declaran con `resourceGlobs:` en `Project.swift`. **Cada capa lleva su propio `CLAUDE.md` con su contrato**, incluida `Modules/Features/`: se cargan al leer un archivo de la carpeta, así que la regla de una capa no ocupa contexto mientras trabajas en otra.
 
 ## Tests
 

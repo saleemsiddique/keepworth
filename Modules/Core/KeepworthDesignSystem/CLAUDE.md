@@ -42,11 +42,7 @@ El verde aparece además en los elementos interactivos.
 
 Los componentes no deciden nada de esto: reciben el `String` con su signo y el `direction` ya elegido por quien llama.
 
-### Por qué hay recursos aquí y en ningún otro módulo
-
-El helper `module()` de `Project.swift` acepta `resourceGlobs:`, relativo al `path` del módulo, y este es el único que lo usa (`resourceGlobs: ["Resources/**"]`). Por defecto está vacío a propósito: un glob que no casa con nada hace fallar la generación.
-
-Además el proyecto lleva `disableSynthesizedResourceAccessors: true`. El accesor de assets que sintetiza Tuist **importa UIKit dentro del target dueño del catálogo**, y este módulo solo puede importar SwiftUI. La opción quita ese accesor y conserva `Bundle.module`, que es solo Foundation y es todo lo que `Colors.swift` necesita.
+El catálogo se lee con `Bundle.module` y nunca con un accesor sintetizado: el que genera Tuist importaría UIKit dentro de este target, y aquí solo entra SwiftUI. Por eso el proyecto lleva `disableSynthesizedResourceAccessors: true`.
 
 ## Tipografía
 
@@ -107,14 +103,12 @@ Todos son tontos: pintan lo que reciben, no lo calculan.
 Dos decisiones que conviene no reabrir por costumbre:
 
 - **`HeadlineAmount` no se oculta a sí mismo.** El tap que redacta el patrimonio es estado de una pantalla, así que quien llama es quien aplica `.redacted(reason: .placeholder)`.
-- **`LedgerTabBar` es genérico sobre su tag.** No conoce los destinos de la app: nombrarlos aquí metería la navegación dentro del design system, y las dos cosas crecen a ritmos distintos.
+- **`LedgerTabBar` es genérico sobre su tag.** No conoce los destinos de la app: nombrarlos aquí metería la navegación dentro del design system.
 
-`LedgerRow` empezó con un `isIncoming: Bool`, y al añadirse el token `expense` apareció el tercer caso que el propio contrato preveía. Hoy es `AmountDirection` —`.incoming`, `.outgoing`, `.neutral`—, y **el módulo no tiene ningún flag booleano**. Que siga así.
+**El módulo no tiene ni un flag booleano, y que siga así.** `LedgerRow` empezó con `isIncoming: Bool` y acabó en `AmountDirection` en cuanto el token `expense` trajo el tercer caso. Hay dos formas de evitarlos, según de quién sea el estado:
 
-Los componentes de entrada lo respetan por dos caminos distintos, y merece la pena saber cuál usar:
-
-- **Si el estado es «cuál de estos es»**, se compara el tag. `SelectionRow` recibe el suyo y el seleccionado en vez de un `isSelected`, igual que `LedgerTabBar` y `ChoiceBar` comparan dentro. Sin booleano y sin tipo nuevo.
-- **Si el estado es del propio componente**, se nombra con un enum. `ActionAvailability` —`.available`, `.unavailable`— es lo que apaga el botón de guardar mientras falte algo; `PrimaryAction("Guardar", availability: .unavailable)` dice en el sitio de llamada lo que un `true` dejaría a adivinar.
+- **«Cuál de estos es»**: se compara el tag. `SelectionRow` recibe el suyo y el seleccionado en vez de un `isSelected`, igual que `LedgerTabBar` y `ChoiceBar` comparan dentro. Sin booleano y sin tipo nuevo.
+- **Estado del propio componente**: se nombra con un enum. `ActionAvailability` —`.available`, `.unavailable`— apaga el botón de guardar mientras falte algo, y `PrimaryAction("Guardar", availability: .unavailable)` dice en el sitio de llamada lo que un `true` dejaría a adivinar.
 
 ## Verificación
 

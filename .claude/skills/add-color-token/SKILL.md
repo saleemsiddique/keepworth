@@ -7,7 +7,7 @@ description: Añade un token de color al design system de Keepworth tocando los 
 
 Un token nuevo es una decisión de diseño, no un detalle de implementación: la paleta es corta a propósito. **Propónselo al usuario con sus dos valores antes de escribir nada**, y no lo añadas por iniciativa propia.
 
-La regla de qué significa cada color está en `CLAUDE.md` § «Diseño». Esto son los pasos.
+La regla de qué significa cada color está en `Modules/Core/KeepworthDesignSystem/CLAUDE.md`. Esto son los pasos.
 
 ## Los cinco sitios, en orden
 
@@ -73,15 +73,16 @@ Una entrada en `swatches`, para que el token se pueda mirar junto a los demás:
 
 El orden importa cuando dos tokens son una pareja: `accent` y `expense` van últimos y juntos, porque lo que hay que poder juzgar es que ninguno grita más que el otro.
 
-### 5. Las tres tablas de documentación
+### 5. Las dos tablas de documentación
 
-Las tres tienen que decir lo mismo, con los mismos hex:
+Las dos tienen que decir lo mismo, con los mismos hex:
 
+- `Modules/Core/KeepworthDesignSystem/CLAUDE.md` § «Los N tokens» — la autoritativa
 - `ESTADO.md` §7
-- `Modules/Core/KeepworthDesignSystem/CLAUDE.md` § «Los N tokens»
-- `CLAUDE.md` raíz § «Diseño» — ahí solo la lista de nombres
 
-Y si el token cambia una **regla** —no solo añade un color—, hay un cuarto sitio que se olvida siempre: **`.claude/agents/architecture-reviewer.md`**. Es el agente que audita el diseño; si sus reglas se quedan viejas, denunciará como violación justo lo que se acaba de decidir. Ya pasó al añadir `expense`.
+El `CLAUDE.md` raíz **no lista los tokens**: solo dice que son siete y apunta al módulo. Si el token cambia esa cuenta, ahí hay una palabra que tocar.
+
+Y si el token cambia una **regla** —no solo añade un color—, hay un tercer sitio que se olvida siempre: **`.claude/agents/architecture-reviewer.md`**. Es el agente que audita el diseño; si sus reglas se quedan viejas, denunciará como violación justo lo que se acaba de decidir. Ya pasó al añadir `expense`.
 
 ## Verificar
 

@@ -194,6 +194,18 @@ Resuelto todo salvo lo que se indica:
 - **Hook de regeneración**: el script es correcto y ejecuta `tuist install` + `tuist generate` al tocar `Project.swift`. Depende de que `tuist` esté en el `PATH` del shell no interactivo; sin los shims el hook avisa y sale sin hacer nada. El `mtime` del `.xcodeproj` **no** sirve como comprobación: la generación de Tuist es idempotente y no reescribe si el contenido no cambia.
 - **Agente `architecture-reviewer`**: detectó un `import GRDB` en un archivo bajo `Modules/Features/`, y además el `DatabaseQueue` filtrado en la API pública. Hallazgo suyo que conviene retener: **un archivo bajo `Modules/Features/` sin target declarado en `Project.swift` esquiva la validación entera** — ni `tuist generate` ni el build lo ven. En la Fase 4, el target y sus `dependencies` se declaran en el mismo commit que el primer `.swift` de la feature.
 
+### Trampas de verificación
+
+Fallos de entorno que parecen fallos de código. Ninguno se arregla tocando Swift, y por eso viven aquí y no en `CLAUDE.md`:
+
+- **SourceKit va por detrás del build.** Un `Cannot find 'X' in scope` sobre código recién escrito suele ser el `.xcodeproj` sin regenerar, no un error real. Manda `tuist xcodebuild build`, no el subrayado rojo del editor.
+- **`Tuist/Package.resolved` cambia su `originHash`** al regenerar sin que se mueva ningún pin. Es ruido: fuera del commit salvo que cambie una versión de verdad.
+- **Todos los bundles de test fallando a la vez**, con «Failed to load the test bundle … Trying to load an unsigned library», es la DerivedData y no el código. Pasa al mezclar un `-derivedDataPath` propio —por ejemplo para instalar la app en el simulador— con la ruta compartida. Que falle incluso un bundle que no se ha tocado es la señal de que el problema es del entorno:
+
+  ```bash
+  rm -rf ~/Library/Developer/Xcode/DerivedData/Keepworth-*
+  ```
+
 ---
 
 ## 4. Decisiones fijadas
@@ -510,6 +522,17 @@ El exponente es **2 para todas las divisas en v1**, y vive en un único sitio: `
 - **`Entry.twoLine`** construye los tres movimientos del usuario. Gasto, ingreso y traspaso son literalmente la misma llamada con las cuentas en distinto orden.
 - **Los importes se introducen en positivo.** El signo lo pone la contabilidad según de qué lado esté cada cuenta, no el usuario.
 - **Una cuenta archivada no admite movimientos nuevos**, pero conserva su histórico.
+
+### Por qué las consultas y la observación son como son
+
+Salió de las fases 4 y 5, al conectar las pantallas. Está aquí y no en los `CLAUDE.md` de módulo porque es el porqué de reglas que allí se enuncian en una línea:
+
+- **`LedgerChanges` no dice qué cambió, y es deliberado.** Una pantalla ya sabe cargar lo que enseña; lo que no puede saber es *cuándo* repetirlo. Una señal por consulta refrescaría menos, pero obligaría a una variante observada de cada consulta y a un doble fiel de cada una, para ahorrar unas lecturas pequeñas contra SQLite local. Por eso se valoró `ValueObservation` y se descartó en la Fase 4, y por eso `SQLiteLedgerChanges` observa la base entera y no una lista de tablas: olvidar una tabla sería una pantalla que deja de actualizarse sin síntoma. Devuelve `AsyncThrowingStream` en vez de terminar en silencio, porque una secuencia que se acaba sola deja una pantalla enseñando cifras que ya no se actualizarán, sin nada que lo diga.
+- **No existe un `Entry` parcial**, y de ahí sale la regla menos obvia de `EntryQuery`: filtrar por cuenta elige **qué asientos**, nunca qué líneas. Un gasto tiene una pata en la cuenta y otra en la categoría, así que devolver solo la que casa con el filtro produce un asiento que no cuadra y que `Entry.init` rechaza.
+- **`EntryQuery.limit` es obligatorio**, y un límite de cero o negativo lanza. No por purismo: SQLite interpreta un `LIMIT` negativo como «sin límite», así que dejarlo pasar convertiría la defensa en su contrario.
+- **El undo recibe el `Entry`, no su id.** Quien borró lo tiene en la mano, y eso dice exactamente qué líneas revivir. Deducirlas del instante del entierro parecía más limpio y estaba mal: un asiento editado y luego borrado arrastra dos entierros que pueden compartir marca de tiempo, y el undo devolvía un movimiento de cuatro patas que no cuadra.
+- **`Entry.twoLine` es interno.** Construir un movimiento pasa siempre por un caso de uso, que es quien valida los tipos de cuenta. Si una pantalla necesita un movimiento que hoy no existe, se añade un caso de uso; no se abre el constructor.
+- **`MoneyFormatter` vive en `Domain`** y no en una capa de presentación, porque el design system no puede ver `Money` y cada feature acabaría con su copia. Cuántos decimales tiene una divisa es un hecho de la divisa, no de la pantalla.
 
 ### Un aviso para la Fase 2 — **resuelto**
 
@@ -901,15 +924,3 @@ No bloquean nada, pero hay que resolverlos cuando toque:
 
 - **Formato del CSV** (Fase 6): un asiento tiene dos o más líneas y una fila de CSV es plana. Hay que decidir si cada fila es una línea (fiel pero ilegible para un humano) o cada fila es un movimiento con columnas de origen y destino (legible, pero no representa asientos de tres o más líneas). Afecta al import tanto como al export. **Aplazado a la Fase 6 por decisión del usuario.**
 
----
-
-## 12. Cómo trabajar en este proyecto
-
-- **Responder siempre en español.**
-- **No tomar decisiones de arquitectura en solitario**: presentar pros y contras, y esperar decisión del usuario.
-- **No añadir features, refactors ni mejoras no pedidas.** Sugerirlas si procede.
-- **Sin atribución de IA en el repositorio**: ni `Co-Authored-By`, ni «Generated with Claude Code», ni menciones a Claude o Anthropic en commits, PRs, issues o comentarios. El autor es el usuario.
-- Preguntar ante cualquier ambigüedad antes de empezar.
-- Los subagentes de este proyecto usan `model: opus`.
-- Ejecutar los tests relevantes tras cada cambio e incluir el comando concreto de verificación en la respuesta.
-- Si detectas un bug en código no relacionado con la tarea, menciónalo brevemente pero no lo arregles sin instrucción explícita.
